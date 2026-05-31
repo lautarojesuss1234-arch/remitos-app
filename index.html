@@ -15,15 +15,14 @@
     deleteDoc, onSnapshot, addDoc, updateDoc, query, where, arrayUnion, arrayRemove, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // ⚠️ Firebase config: reemplazá con tus propios valores desde la consola de Firebase
   const firebaseConfig = {
-  apiKey: "AIzaSyCQZJrK-NimqRBreGrC8SuZNNur0uK9GAM",
-  authDomain: "remitos-efbe0.firebaseapp.com",
-  projectId: "remitos-efbe0",
-  storageBucket: "remitos-efbe0.firebasestorage.app",
-  messagingSenderId: "569908262349",
-  appId: "1:569908262349:web:57dd096069ef5c80810084"
-};
+    apiKey: "AIzaSyCQZJrK-NimqRBreGrC8SuZNNur0uK9GAM",
+    authDomain: "remitos-efbe0.firebaseapp.com",
+    projectId: "remitos-efbe0",
+    storageBucket: "remitos-efbe0.firebasestorage.app",
+    messagingSenderId: "569908262349",
+    appId: "1:569908262349:web:57dd096069ef5c80810084"
+  };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -150,6 +149,15 @@
   .queue-bar-bg { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
   .queue-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s ease; }
   .queue-label { font-size: 11px; color: var(--text-muted); margin-top: 5px; font-family: 'DM Mono', monospace; text-align: center; }
+
+  /* API key status indicator */
+  .key-status {
+    display: flex; align-items: center; gap: 6px; font-size: 11px;
+    font-family: 'DM Mono', monospace; margin-top: 6px;
+  }
+  .key-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+  .key-dot.ok { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+  .key-dot.missing { background: var(--accent3); }
 
   /* Guest mode banner */
   .guest-banner {
@@ -329,18 +337,39 @@
   <div class="page active" id="page-scanner">
     <div class="scanner-card">
       <div class="section-title">Configuración API</div>
+
+      <!-- Selector de proveedor -->
       <div class="api-selector-row">
-        <button class="api-type-btn active" id="btnTypeGemini" onclick="setApiType('gemini')">✦ Gemini</button>
-        <button class="api-type-btn" id="btnTypeNvidia" onclick="setApiType('nvidia')">⚡ NVIDIA</button>
+        <button class="api-type-btn active" id="btnTypeGemini" onclick="switchProvider('gemini')">✦ Gemini</button>
+        <button class="api-type-btn" id="btnTypeNvidia" onclick="switchProvider('nvidia')">⚡ NVIDIA</button>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input class="field-input" id="apiKeyInput" type="password" placeholder="Pega tu API Key aquí..." style="font-family:'DM Mono',monospace;font-size:12px;">
-        <button style="padding:10px 14px;background:var(--accent);color:#0d0f14;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;" onclick="saveApiKey()">OK</button>
+
+      <!-- Input de key + botón guardar -->
+      <div style="display:flex;gap:8px;margin-bottom:6px;">
+        <input class="field-input" id="apiKeyInput" type="password"
+          placeholder="Pega tu API Key aquí..."
+          style="font-family:'DM Mono',monospace;font-size:12px;">
+        <button style="padding:10px 14px;background:var(--accent);color:#0d0f14;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;" onclick="saveApiKey()">Guardar</button>
       </div>
+
+      <!-- Estado de las keys guardadas -->
+      <div id="keyStatusRow" style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+        <div class="key-status">
+          <div class="key-dot" id="dotGemini"></div>
+          <span id="lblGemini" style="color:var(--text-muted);">Gemini: —</span>
+        </div>
+        <div class="key-status">
+          <div class="key-dot" id="dotNvidia"></div>
+          <span id="lblNvidia" style="color:var(--text-muted);">NVIDIA: —</span>
+        </div>
+      </div>
+
       <select id="modeloSelect" onchange="saveModelo()" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;">
+        <!-- Gemini models -->
         <option value="gemini-2.5-flash">Gemini 2.5 Flash (recomendado)</option>
         <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
         <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash 8B</option>
+        <!-- NVIDIA models -->
         <option value="nvidia/llama-3.2-11b-vision-instruct">NVIDIA Llama 3.2 11B Vision</option>
         <option value="nvidia/llama-3.2-90b-vision-instruct">NVIDIA Llama 3.2 90B Vision</option>
         <option value="microsoft/phi-3.5-vision-instruct">NVIDIA Phi-3.5 Vision</option>
@@ -559,10 +588,34 @@
 // ══════════════════════════════════════════
 // GLOBALS
 // ══════════════════════════════════════════
-const API_KEY_STORAGE = 'remitos_api_key';
-const MODELO_STORAGE  = 'remitos_modelo';
-let API_KEY = localStorage.getItem(API_KEY_STORAGE) || '';
-let MODELO  = localStorage.getItem(MODELO_STORAGE)  || 'gemini-2.5-flash';
+
+// ── API KEY STORAGE: una key por proveedor ──────────────────────────────────
+// Esto resuelve el bug principal: antes había un solo slot y se pisaban.
+// Ahora cada proveedor tiene su propia entrada en localStorage.
+const STORAGE_KEY_GEMINI  = 'remitos_api_key_gemini';
+const STORAGE_KEY_NVIDIA  = 'remitos_api_key_nvidia';
+const MODELO_STORAGE      = 'remitos_modelo';
+const PROVIDER_STORAGE    = 'remitos_provider'; // 'gemini' | 'nvidia'
+
+// Migrate legacy single-key storage if present
+(function migrateLegacy() {
+  const legacy = localStorage.getItem('remitos_api_key');
+  if (legacy) {
+    const isNv = legacy.startsWith('nvapi-');
+    if (isNv && !localStorage.getItem(STORAGE_KEY_NVIDIA))  localStorage.setItem(STORAGE_KEY_NVIDIA, legacy);
+    if (!isNv && !localStorage.getItem(STORAGE_KEY_GEMINI)) localStorage.setItem(STORAGE_KEY_GEMINI, legacy);
+    localStorage.removeItem('remitos_api_key');
+  }
+})();
+
+let currentProvider = localStorage.getItem(PROVIDER_STORAGE) || 'gemini';
+let API_KEYS = {
+  gemini: localStorage.getItem(STORAGE_KEY_GEMINI) || '',
+  nvidia: localStorage.getItem(STORAGE_KEY_NVIDIA) || ''
+};
+let MODELO = localStorage.getItem(MODELO_STORAGE) || 'gemini-2.5-flash';
+
+// ── App state ───────────────────────────────────────────────────────────────
 let currentUser = null;
 let isGuest = false;
 let userAlias = '';
@@ -620,9 +673,7 @@ function bootApp() {
   document.getElementById('appShell').style.display = 'block';
   document.getElementById('headerDate').textContent =
     new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric' });
-  document.getElementById('apiKeyInput').value = API_KEY;
-  document.getElementById('modeloSelect').value = MODELO;
-  updateApiTypeUI();
+  initProviderUI();
   renderHeaderAvatar();
 }
 
@@ -653,8 +704,9 @@ function doGuestLogin() {
   misGrupos = [];
   bootApp();
   updateHeader();
-  document.getElementById('btnNuevoGrupo').disabled = true;
-  document.getElementById('btnNuevoGrupo').style.opacity = '0.4';
+  const btnNuevo = document.getElementById('btnNuevoGrupo');
+  btnNuevo.disabled = true;
+  btnNuevo.style.opacity = '0.4';
   showToast('👤 Modo demo — los datos no se guardan');
 }
 
@@ -668,6 +720,113 @@ async function doSignOut() {
   }
   const fb = await waitFB();
   await fb.signOut(fb.auth);
+}
+
+// ══════════════════════════════════════════
+// API KEY MANAGEMENT — SEPARADO POR PROVEEDOR
+// ══════════════════════════════════════════
+
+/**
+ * Cambia el proveedor activo y actualiza la UI mostrando la key guardada de ese proveedor.
+ * No toca la key del otro proveedor.
+ */
+function switchProvider(provider) {
+  currentProvider = provider;
+  localStorage.setItem(PROVIDER_STORAGE, provider);
+
+  // Actualizar botones de selección
+  document.getElementById('btnTypeGemini').classList.toggle('active', provider === 'gemini');
+  document.getElementById('btnTypeNvidia').classList.toggle('active', provider === 'nvidia');
+
+  // Mostrar la key guardada del proveedor seleccionado en el input
+  document.getElementById('apiKeyInput').value = API_KEYS[provider] || '';
+
+  // Ajustar modelo por defecto si no corresponde al proveedor
+  const sel = document.getElementById('modeloSelect');
+  const isNvModel = sel.value.startsWith('nvidia') || sel.value.startsWith('microsoft');
+  if (provider === 'nvidia' && !isNvModel) {
+    sel.value = 'nvidia/llama-3.2-11b-vision-instruct';
+    saveModelo();
+  } else if (provider === 'gemini' && isNvModel) {
+    sel.value = 'gemini-2.5-flash';
+    saveModelo();
+  }
+
+  updateKeyStatusUI();
+}
+
+/**
+ * Guarda la key del proveedor activo SIN tocar la del otro proveedor.
+ */
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val) { showToast('⚠ Ingresá una API Key', true); return; }
+
+  // Detectar proveedor por prefijo para evitar guardarla en el slot equivocado
+  const isNv = val.startsWith('nvapi-');
+  if (isNv && currentProvider === 'gemini') {
+    showToast('⚠ Esa parece una key de NVIDIA. Cambiá el proveedor primero.', true);
+    return;
+  }
+  if (!isNv && currentProvider === 'nvidia') {
+    showToast('⚠ Esa parece una key de Gemini. Cambiá el proveedor primero.', true);
+    return;
+  }
+
+  API_KEYS[currentProvider] = val;
+  const storageKey = currentProvider === 'gemini' ? STORAGE_KEY_GEMINI : STORAGE_KEY_NVIDIA;
+  localStorage.setItem(storageKey, val);
+  updateKeyStatusUI();
+  showToast(`✓ Key de ${currentProvider === 'gemini' ? 'Gemini' : 'NVIDIA'} guardada`);
+}
+
+function saveModelo() {
+  MODELO = document.getElementById('modeloSelect').value;
+  localStorage.setItem(MODELO_STORAGE, MODELO);
+}
+
+/** Inicializa la UI del proveedor al arrancar la app */
+function initProviderUI() {
+  document.getElementById('modeloSelect').value = MODELO;
+  // Cargar key del proveedor actual en el input
+  document.getElementById('apiKeyInput').value = API_KEYS[currentProvider] || '';
+  // Sincronizar botones
+  document.getElementById('btnTypeGemini').classList.toggle('active', currentProvider === 'gemini');
+  document.getElementById('btnTypeNvidia').classList.toggle('active', currentProvider === 'nvidia');
+  updateKeyStatusUI();
+}
+
+/** Muestra indicadores de estado de cada key */
+function updateKeyStatusUI() {
+  const dotG = document.getElementById('dotGemini');
+  const lblG = document.getElementById('lblGemini');
+  const dotN = document.getElementById('dotNvidia');
+  const lblN = document.getElementById('lblNvidia');
+
+  if (API_KEYS.gemini) {
+    dotG.className = 'key-dot ok';
+    lblG.textContent = 'Gemini: ✓ guardada';
+    lblG.style.color = 'var(--accent2)';
+  } else {
+    dotG.className = 'key-dot missing';
+    lblG.textContent = 'Gemini: sin key';
+    lblG.style.color = 'var(--text-dim)';
+  }
+
+  if (API_KEYS.nvidia) {
+    dotN.className = 'key-dot ok';
+    lblN.textContent = 'NVIDIA: ✓ guardada';
+    lblN.style.color = 'var(--accent2)';
+  } else {
+    dotN.className = 'key-dot missing';
+    lblN.textContent = 'NVIDIA: sin key';
+    lblN.style.color = 'var(--text-dim)';
+  }
+}
+
+/** Devuelve la API key del proveedor activo */
+function getActiveApiKey() {
+  return API_KEYS[currentProvider] || '';
 }
 
 // ══════════════════════════════════════════
@@ -923,13 +1082,13 @@ async function showGroupMembers() {
   if (!activeGroupData) return;
   const members = activeGroupData.memberMap || {};
   const memberList = Object.entries(members).map(([email, info]) =>
-    `<div class="member-row">
-      <div class="member-info"><div class="member-name">${info.alias}</div><div class="member-email">${email}</div></div>
-      <span class="member-role">${email === currentUser.email ? 'Vos' : 'Miembro'}</span>
+    `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div><div style="font-weight:600;font-size:14px;">${info.alias}</div><div style="font-size:11px;color:var(--text-muted);">${email}</div></div>
+      <span style="font-size:11px;color:var(--text-muted);">${email === currentUser.email ? 'Vos' : 'Miembro'}</span>
     </div>`).join('');
 
   createModal('Miembros del Grupo', `
-    <div class="members-list">${memberList || '<p style="color:var(--text-muted)">Sin miembros</p>'}</div>
+    <div>${memberList || '<p style="color:var(--text-muted)">Sin miembros</p>'}</div>
     <div style="margin-top:20px;">
       <div class="field-label" style="margin-bottom:8px;">Invitar por email</div>
       <div style="display:flex;gap:8px;">
@@ -1011,49 +1170,8 @@ function switchSharedTab(name, el) {
 // ══════════════════════════════════════════
 // API — NVIDIA / GEMINI UNIFIED
 // ══════════════════════════════════════════
-function setApiType(type) {
-  document.getElementById('btnTypeGemini').classList.toggle('active', type === 'gemini');
-  document.getElementById('btnTypeNvidia').classList.toggle('active', type === 'nvidia');
-  const sel = document.getElementById('modeloSelect');
-  if (type === 'nvidia') {
-    sel.value = (sel.value.startsWith('nvidia') || sel.value.startsWith('microsoft'))
-      ? sel.value : 'nvidia/llama-3.2-11b-vision-instruct';
-  } else {
-    sel.value = sel.value.startsWith('gemini') ? sel.value : 'gemini-2.5-flash';
-  }
-  saveModelo();
-}
-
-// FIX 5: updateApiTypeUI también corrige el modelo si no coincide con el tipo de key
-function updateApiTypeUI() {
-  const isNvidia = API_KEY.startsWith('nvapi-');
-  document.getElementById('btnTypeGemini').classList.toggle('active', !isNvidia);
-  document.getElementById('btnTypeNvidia').classList.toggle('active', isNvidia);
-  const sel = document.getElementById('modeloSelect');
-  if (isNvidia && sel.value.startsWith('gemini')) {
-    sel.value = 'nvidia/llama-3.2-11b-vision-instruct';
-    saveModelo();
-  } else if (!isNvidia && (sel.value.startsWith('nvidia') || sel.value.startsWith('microsoft'))) {
-    sel.value = 'gemini-2.5-flash';
-    saveModelo();
-  }
-}
-
-function saveApiKey() {
-  API_KEY = document.getElementById('apiKeyInput').value.trim();
-  localStorage.setItem(API_KEY_STORAGE, API_KEY);
-  updateApiTypeUI();
-  showToast('✓ API Key guardada');
-}
-
-function saveModelo() {
-  MODELO = document.getElementById('modeloSelect').value;
-  localStorage.setItem(MODELO_STORAGE, MODELO);
-}
-
 async function rateLimit() {
-  const isNvidia = API_KEY.startsWith('nvapi-');
-  if (!isNvidia) return;
+  if (currentProvider !== 'nvidia') return;
   const now = Date.now();
   reqTimestamps = reqTimestamps.filter(t => now - t < 60000);
   if (reqTimestamps.length >= MAX_RPM) {
@@ -1064,7 +1182,6 @@ async function rateLimit() {
   reqTimestamps.push(Date.now());
 }
 
-// FIX 1: comprimirImagen con onerror para que la promesa no quede colgada
 async function comprimirImagen(archivo) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1097,16 +1214,20 @@ const PROMPT_TEXT =
   "5) 'bodega_destino': el nombre de la empresa inmediatamente a la derecha de la etiqueta '[HASTA]'. " +
   "6) 'nombre_chofer': el nombre del conductor impreso abajo a la izquierda (ej. RIVERO JUAN CARLOS).";
 
-// FIX 2 + FIX 3: timeout en fetch, y chequeo de res.ok ANTES de parsear JSON
 async function procesarImagen(archivo) {
   await rateLimit();
+
+  const activeKey = getActiveApiKey();
+  if (!activeKey) throw new Error(`No hay API Key guardada para ${currentProvider === 'gemini' ? 'Gemini' : 'NVIDIA'}. Guardá tu key en la sección de configuración.`);
+
   const cleanBase64 = await comprimirImagen(archivo);
-  const esNvidia = API_KEY.startsWith('nvapi-');
+  const esNvidia = currentProvider === 'nvidia';
+
   let url, headers = { 'Content-Type': 'application/json' }, bodyData;
 
   if (esNvidia) {
     url = 'https://integrate.api.nvidia.com/v1/chat/completions';
-    headers['Authorization'] = `Bearer ${API_KEY}`;
+    headers['Authorization'] = `Bearer ${activeKey}`;
     bodyData = {
       model: MODELO, temperature: 0.1, top_p: 0.7, max_tokens: 1024,
       messages: [{ role: 'user', content: [
@@ -1115,14 +1236,14 @@ async function procesarImagen(archivo) {
       ]}]
     };
   } else {
-    url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${API_KEY}`;
+    url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${activeKey}`;
     bodyData = {
       contents: [{ parts: [{ text: PROMPT_TEXT }, { inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } }] }],
       generationConfig: { temperature: 0.1 }
     };
   }
 
-  // FIX 2: AbortController para timeout de 30s
+  // Timeout de 30s
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -1136,7 +1257,6 @@ async function procesarImagen(archivo) {
     clearTimeout(timeoutId);
   }
 
-  // FIX 3: chequear res.ok ANTES de parsear, y manejar body no-JSON
   if (!res.ok) {
     let errMsg = 'HTTP ' + res.status;
     try {
@@ -1156,7 +1276,14 @@ async function procesarImagen(archivo) {
     raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
   }
   raw = raw.replace(/```json|```/g, '').trim();
-  return JSON.parse(raw);
+
+  if (!raw) throw new Error('La API devolvió una respuesta vacía. Intentá con otra imagen.');
+
+  try {
+    return JSON.parse(raw);
+  } catch(e) {
+    throw new Error('No se pudo interpretar la respuesta de la API. Respuesta: ' + raw.slice(0, 100));
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1186,14 +1313,13 @@ inputGaleria.addEventListener('change', () => {
 
 document.getElementById('btnEscanear').addEventListener('click', async () => {
   if (!activeInput?.files.length) { showToast('⚠ Seleccioná una imagen', true); return; }
-  if (!API_KEY) { showToast('⚠ Guardá tu API Key primero', true); return; }
+  if (!getActiveApiKey()) { showToast('⚠ Guardá tu API Key primero', true); return; }
   scanQueue = Array.from(activeInput.files).slice(0, 30);
   scanTotal = scanQueue.length;
   scanIndex = 0;
   await procesarSiguiente();
 });
 
-// FIX 4: setBtnScanning(false) en finally para que el botón nunca quede bloqueado
 async function procesarSiguiente() {
   if (scanIndex >= scanTotal) { resetScanUI(); return; }
   setBtnScanning(true, `Analizando ${scanIndex+1}/${scanTotal}...`);
@@ -1261,7 +1387,7 @@ function updateQueueProgress(wrapId, fillId, labelId, idx, total) {
 }
 
 // ══════════════════════════════════════════
-// SCANNER — GRUPO (FIX 4 aplicado también)
+// SCANNER — GRUPO
 // ══════════════════════════════════════════
 let gActiveInput = null;
 document.getElementById('gInputImagen').addEventListener('change', function() {
@@ -1278,14 +1404,13 @@ document.getElementById('gInputGaleria').addEventListener('change', function() {
 
 document.getElementById('gBtnEscanear').addEventListener('click', async () => {
   if (!gActiveInput?.files.length) { showToast('⚠ Seleccioná una imagen', true); return; }
-  if (!API_KEY) { showToast('⚠ Configurá tu API Key en la pestaña Escanear', true); return; }
+  if (!getActiveApiKey()) { showToast('⚠ Configurá tu API Key en la pestaña Escanear', true); return; }
   gScanQueue = Array.from(gActiveInput.files).slice(0, 30);
   gScanTotal = gScanQueue.length;
   gScanIndex = 0;
   await gProcesarSiguiente();
 });
 
-// FIX 4: finally en scanner grupo también
 async function gProcesarSiguiente() {
   if (gScanIndex >= gScanTotal) { gResetScanUI(); return; }
   gSetBtnScanning(true, `Analizando ${gScanIndex+1}/${gScanTotal}...`);
