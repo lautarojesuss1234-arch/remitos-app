@@ -15,13 +15,14 @@
     deleteDoc, onSnapshot, addDoc, updateDoc, query, where, arrayUnion, arrayRemove, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+  // ⚠️ Firebase config: reemplazá con tus propios valores desde la consola de Firebase
   const firebaseConfig = {
-    apiKey: "AIzaSyCQZJrK-NimqRBreGrC8SuZNNur0uK9GAM",
-    authDomain: "remitos-efbe0.firebaseapp.com",
-    projectId: "remitos-efbe0",
-    storageBucket: "remitos-efbe0.firebasestorage.app",
-    messagingSenderId: "569908262349",
-    appId: "1:569908262349:web:57dd096069ef5c80810084"
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: ""
   };
 
   const app = initializeApp(firebaseConfig);
@@ -447,13 +448,11 @@
   <!-- ══ COMPARTIDOS ══ -->
   <div class="page" id="page-shared">
 
-    <!-- Sub-tabs: Grupos / Mi Perfil -->
     <div class="shared-tabs">
       <div class="shared-tab active" onclick="switchSharedTab('grupos', this)">🤝 Grupos</div>
       <div class="shared-tab" onclick="switchSharedTab('perfil', this)">👤 Mi Perfil</div>
     </div>
 
-    <!-- Panel: Grupos -->
     <div class="shared-panel active" id="sharedPanelGrupos">
       <div id="sharedList">
         <div class="top-row">
@@ -465,7 +464,6 @@
         </div>
       </div>
 
-      <!-- Group workspace -->
       <div class="group-workspace" id="groupWorkspace">
         <div class="group-header">
           <button class="btn-back" onclick="leaveGroupView()">← Volver</button>
@@ -474,7 +472,6 @@
           <button class="btn-export" onclick="showGroupMembers()" style="font-size:11px;">👥 Miembros</button>
         </div>
 
-        <!-- Scanner grupo -->
         <div class="scanner-card">
           <div class="section-title">Cargar Remito al Grupo</div>
           <div style="display:flex;gap:10px;margin-bottom:4px;">
@@ -504,7 +501,6 @@
           <button class="btn-save" id="gBtnGuardar">＋ Guardar en el Grupo</button>
         </div>
 
-        <!-- Group records -->
         <div class="top-row" style="margin-top:8px;">
           <div class="section-title" style="margin:0;flex:1">Registros del Grupo</div>
           <button class="btn-export" onclick="exportExcelGroup()">⬇ Excel</button>
@@ -530,9 +526,8 @@
           <div class="empty-state" id="gEmptyState"><div class="empty-icon">📭</div><p>Sin registros en este grupo.</p></div>
         </div>
       </div>
-    </div><!-- end panel grupos -->
+    </div>
 
-    <!-- Panel: Mi Perfil -->
     <div class="shared-panel" id="sharedPanelPerfil">
       <div class="profile-card">
         <div class="profile-avatar-row" id="profileAvatarRow"></div>
@@ -552,7 +547,7 @@
           ⚠️ <span><strong>Modo invitado:</strong> los grupos y el perfil requieren una cuenta Google.</span>
         </div>
       </div>
-    </div><!-- end panel perfil -->
+    </div>
 
   </div><!-- end page-shared -->
 
@@ -569,19 +564,17 @@ const MODELO_STORAGE  = 'remitos_modelo';
 let API_KEY = localStorage.getItem(API_KEY_STORAGE) || '';
 let MODELO  = localStorage.getItem(MODELO_STORAGE)  || 'gemini-2.5-flash';
 let currentUser = null;
-let isGuest = false;      // ← modo invitado
-let userAlias = '';       // ← alias guardado
+let isGuest = false;
+let userAlias = '';
 let registros = [];
 let unsubPersonal = null;
 
-// Shared / groups
 let misGrupos = [];
 let activeGroupId = null;
 let activeGroupData = null;
 let groupRegistros = [];
 let unsubGroup = null;
 
-// Queue
 let scanQueue = [], scanIndex = 0, scanTotal = 0;
 let gScanQueue = [], gScanIndex = 0, gScanTotal = 0;
 let currentJson = null, gCurrentJson = null;
@@ -660,7 +653,6 @@ function doGuestLogin() {
   misGrupos = [];
   bootApp();
   updateHeader();
-  // disable groups tab for guests — just show a note
   document.getElementById('btnNuevoGrupo').disabled = true;
   document.getElementById('btnNuevoGrupo').style.opacity = '0.4';
   showToast('👤 Modo demo — los datos no se guardan');
@@ -775,7 +767,6 @@ async function subscribePersonal() {
 
 async function saveRegistroPersonal(entry) {
   if (isGuest) {
-    // memory only
     entry._firestoreId = String(entry._id);
     registros.unshift(entry);
     updateHeader();
@@ -1007,7 +998,7 @@ function getActiveRecords() {
 }
 
 // ══════════════════════════════════════════
-// SHARED TABS (Grupos / Perfil)
+// SHARED TABS
 // ══════════════════════════════════════════
 function switchSharedTab(name, el) {
   document.querySelectorAll('.shared-tab').forEach(t => t.classList.remove('active'));
@@ -1025,17 +1016,27 @@ function setApiType(type) {
   document.getElementById('btnTypeNvidia').classList.toggle('active', type === 'nvidia');
   const sel = document.getElementById('modeloSelect');
   if (type === 'nvidia') {
-    sel.value = sel.value.startsWith('nvidia') || sel.value.startsWith('microsoft') ? sel.value : 'nvidia/llama-3.2-11b-vision-instruct';
+    sel.value = (sel.value.startsWith('nvidia') || sel.value.startsWith('microsoft'))
+      ? sel.value : 'nvidia/llama-3.2-11b-vision-instruct';
   } else {
     sel.value = sel.value.startsWith('gemini') ? sel.value : 'gemini-2.5-flash';
   }
   saveModelo();
 }
 
+// FIX 5: updateApiTypeUI también corrige el modelo si no coincide con el tipo de key
 function updateApiTypeUI() {
   const isNvidia = API_KEY.startsWith('nvapi-');
   document.getElementById('btnTypeGemini').classList.toggle('active', !isNvidia);
   document.getElementById('btnTypeNvidia').classList.toggle('active', isNvidia);
+  const sel = document.getElementById('modeloSelect');
+  if (isNvidia && sel.value.startsWith('gemini')) {
+    sel.value = 'nvidia/llama-3.2-11b-vision-instruct';
+    saveModelo();
+  } else if (!isNvidia && (sel.value.startsWith('nvidia') || sel.value.startsWith('microsoft'))) {
+    sel.value = 'gemini-2.5-flash';
+    saveModelo();
+  }
 }
 
 function saveApiKey() {
@@ -1063,12 +1064,15 @@ async function rateLimit() {
   reqTimestamps.push(Date.now());
 }
 
+// FIX 1: comprimirImagen con onerror para que la promesa no quede colgada
 async function comprimirImagen(archivo) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    reader.onerror = () => reject(new Error('No se pudo leer la imagen'));
     reader.readAsDataURL(archivo);
     reader.onload = e => {
       const img = new Image();
+      img.onerror = () => reject(new Error('Imagen inválida o corrupta'));
       img.onload = () => {
         const MAX_W = 1500;
         let w = img.width, h = img.height;
@@ -1093,6 +1097,7 @@ const PROMPT_TEXT =
   "5) 'bodega_destino': el nombre de la empresa inmediatamente a la derecha de la etiqueta '[HASTA]'. " +
   "6) 'nombre_chofer': el nombre del conductor impreso abajo a la izquierda (ej. RIVERO JUAN CARLOS).";
 
+// FIX 2 + FIX 3: timeout en fetch, y chequeo de res.ok ANTES de parsear JSON
 async function procesarImagen(archivo) {
   await rateLimit();
   const cleanBase64 = await comprimirImagen(archivo);
@@ -1117,10 +1122,32 @@ async function procesarImagen(archivo) {
     };
   }
 
-  const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(bodyData) });
+  // FIX 2: AbortController para timeout de 30s
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+  let res;
+  try {
+    res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(bodyData), signal: controller.signal });
+  } catch(e) {
+    if (e.name === 'AbortError') throw new Error('Timeout: la API no respondió en 30 segundos');
+    throw e;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  // FIX 3: chequear res.ok ANTES de parsear, y manejar body no-JSON
+  if (!res.ok) {
+    let errMsg = 'HTTP ' + res.status;
+    try {
+      const errData = await res.json();
+      if (errData.error?.message) errMsg = 'API Error ' + (errData.error.code||res.status) + ': ' + errData.error.message;
+    } catch(_) { /* body no es JSON */ }
+    throw new Error(errMsg);
+  }
+
   const data = await res.json();
   if (data.error) throw new Error('API Error ' + (data.error.code||'') + ': ' + data.error.message);
-  if (!res.ok) throw new Error('HTTP ' + res.status);
 
   let raw = '';
   if (esNvidia) {
@@ -1166,6 +1193,7 @@ document.getElementById('btnEscanear').addEventListener('click', async () => {
   await procesarSiguiente();
 });
 
+// FIX 4: setBtnScanning(false) en finally para que el botón nunca quede bloqueado
 async function procesarSiguiente() {
   if (scanIndex >= scanTotal) { resetScanUI(); return; }
   setBtnScanning(true, `Analizando ${scanIndex+1}/${scanTotal}...`);
@@ -1185,8 +1213,9 @@ async function procesarSiguiente() {
     showToast('❌ ' + e.message, true);
     scanIndex++;
     setTimeout(() => procesarSiguiente(), 500);
+  } finally {
+    setBtnScanning(false);
   }
-  setBtnScanning(false);
 }
 
 document.getElementById('btnGuardar').addEventListener('click', async () => {
@@ -1232,7 +1261,7 @@ function updateQueueProgress(wrapId, fillId, labelId, idx, total) {
 }
 
 // ══════════════════════════════════════════
-// SCANNER — GRUPO
+// SCANNER — GRUPO (FIX 4 aplicado también)
 // ══════════════════════════════════════════
 let gActiveInput = null;
 document.getElementById('gInputImagen').addEventListener('change', function() {
@@ -1256,6 +1285,7 @@ document.getElementById('gBtnEscanear').addEventListener('click', async () => {
   await gProcesarSiguiente();
 });
 
+// FIX 4: finally en scanner grupo también
 async function gProcesarSiguiente() {
   if (gScanIndex >= gScanTotal) { gResetScanUI(); return; }
   gSetBtnScanning(true, `Analizando ${gScanIndex+1}/${gScanTotal}...`);
@@ -1275,8 +1305,9 @@ async function gProcesarSiguiente() {
     showToast('❌ ' + e.message, true);
     gScanIndex++;
     setTimeout(() => gProcesarSiguiente(), 500);
+  } finally {
+    gSetBtnScanning(false);
   }
-  gSetBtnScanning(false);
 }
 
 document.getElementById('gBtnGuardar').addEventListener('click', async () => {
@@ -1734,7 +1765,7 @@ function exportPDFFrom(data) {
 }
 
 // ══════════════════════════════════════════
-// IMPORT — reutilizable
+// IMPORT
 // ══════════════════════════════════════════
 async function importarDesdeExcel(file, saveFn) {
   const reader = new FileReader();
