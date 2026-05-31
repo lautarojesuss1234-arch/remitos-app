@@ -3,35 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>RemitOS — Control de Despachos</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<title>RemitOS Control de Despachos</title>
+<link href="https://fonts.googleapis.com/css?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 
-<!-- Firebase SDKs -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import { getFirestore, collection, doc, setDoc, getDoc, getDocs,
-    deleteDoc, onSnapshot, addDoc, updateDoc, query, where, arrayUnion, arrayRemove, serverTimestamp }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, addDoc, updateDoc, query, where, arrayUnion, arrayRemove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCQZJrK-NimqRBreGrC8SuZNNur0uK9GAM",
-    authDomain: "remitos-efbe0.firebaseapp.com",
-    projectId: "remitos-efbe0",
-    storageBucket: "remitos-efbe0.firebasestorage.app",
-    messagingSenderId: "569908262349",
-    appId: "1:569908262349:web:57dd096069ef5c80810084"
-  };
+const firebaseConfig = {
+  apiKey: "AlzaSyCQZJrK-NimqRBreGrC8SuZNNur0uK9GAM",
+  authDomain: "remitos-efbe0.firebaseapp.com",
+  projectId: "remitos-efbe0",
+  storageBucket: "remitos-efbe0.firebasestorage.app",
+  messagingSenderId: "569908262349",
+  appId: "1:569908262349:web:57dd096069ef5c80810084"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const provider = new GoogleAuthProvider();
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
 
-  window._fb = { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged,
-    collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot,
-    addDoc, updateDoc, query, where, arrayUnion, arrayRemove, serverTimestamp };
+window._fb = { auth, db, provider, signInWithPopup, signOut, onAuthStateChanged, collection, doc, setDoc, getDoc, getDocs, deleteDoc, onSnapshot, addDoc, updateDoc, query, where, arrayUnion, arrayRemove, serverTimestamp };
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -39,264 +33,216 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
 <style>
-  :root {
-    --bg: #0d0f14;
-    --surface: #151820;
-    --surface2: #1c2030;
-    --border: #252a3a;
-    --accent: #e8ff5a;
-    --accent2: #5af0c8;
-    --accent3: #ff6b6b;
-    --text: #eef0f8;
-    --text-muted: #6b7494;
-    --text-dim: #3a4060;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+:root {
+  --bg: #0d0f14;
+  --surface: #151820;
+  --surface2: #1c2030;
+  --border: #252a3a;
+  --accent: #e8ff5a;
+  --accent2: #5af0c8;
+  --accent3: #ff6b6b;
+  --text: #eef0f8;
+  --text-muted: #6b7494;
+  --text-dim: #3a4060;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
 
-  /* ── LOGIN SCREEN ── */
-  #loginScreen {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 100vh; padding: 24px; text-align: center;
-  }
-  .login-logo {
-    font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 800;
-    letter-spacing: -1px; margin-bottom: 8px;
-  }
-  .login-logo span { color: var(--accent); }
-  .login-sub { color: var(--text-muted); font-size: 14px; margin-bottom: 48px; }
-  .btn-google {
-    display: flex; align-items: center; gap: 12px;
-    padding: 16px 32px; background: white; color: #1a1a1a;
-    border: none; border-radius: 12px; font-size: 15px; font-weight: 600;
-    cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
-  }
-  .btn-google:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,255,255,0.15); }
-  .btn-google img { width: 20px; height: 20px; }
-  .login-divider { display: flex; align-items: center; gap: 14px; margin: 20px 0; width: 100%; max-width: 300px; }
-  .login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .login-divider span { font-size: 12px; color: var(--text-dim); }
-  .btn-guest {
-    display: flex; align-items: center; gap: 10px;
-    padding: 14px 28px; background: transparent; color: var(--text-muted);
-    border: 1px solid var(--border); border-radius: 12px; font-size: 14px; font-weight: 500;
-    cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif;
-  }
-  .btn-guest:hover { border-color: var(--accent2); color: var(--accent2); transform: translateY(-1px); }
-  .guest-badge {
-    display: inline-block; background: rgba(255,107,107,0.15); color: var(--accent3);
-    border: 1px solid rgba(255,107,107,0.3); border-radius: 20px;
-    font-size: 10px; font-weight: 700; padding: 2px 8px; letter-spacing: 0.05em;
-    margin-left: 8px; vertical-align: middle;
-  }
-  .login-note { margin-top: 24px; font-size: 12px; color: var(--text-dim); }
+/*-LOGIN SCREEN*/
+#loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; text-align: center; }
+.login-logo { font-family: 'Syne', sans-serif; font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+.login-logo span { color: var(--accent); }
+.login-sub { color: var(--text-muted); font-size: 14px; margin-bottom: 48px; }
+.btn-google { display: flex; align-items: center; gap: 12px; padding: 16px 32px; background: white; color: #1a1a1a; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+.btn-google:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,255,255,0.15); }
+.btn-google img { width: 20px; height: 20px; }
+.login-divider { display: flex; align-items: center; gap: 14px; margin: 20px 0; width: 100%; max-width: 300px; }
+.login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.login-divider span { font-size: 12px; color: var(--text-dim); }
+.btn-guest { display: flex; align-items: center; gap: 10px; padding: 14px 28px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 12px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+.btn-guest:hover { border-color: var(--accent2); color: var(--accent2); transform: translateY(-1px); }
+.guest-badge { display: inline-block; background: rgba(255,107,107,0.15); color: var(--accent3); border: 1px solid rgba(255,107,107,0.3); border-radius: 20px; font-size: 10px; font-weight: 700; padding: 2px 8px; letter-spacing: 0.05em; margin-left: 8px; vertical-align: middle; }
+.login-note { margin-top: 24px; font-size: 12px; color: var(--text-dim); }
 
-  /* ── HEADER ── */
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px; border-bottom: 1px solid var(--border);
-    background: var(--surface); position: sticky; top: 0; z-index: 100;
-  }
-  .logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
-  .logo span { color: var(--accent); }
-  .logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); }
-  .header-right { display: flex; align-items: center; gap: 12px; }
-  .user-avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; }
-  .guest-avatar {
-    width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent3);
-    background: rgba(255,107,107,0.15); display: flex; align-items: center; justify-content: center;
-    font-size: 14px; cursor: default;
-  }
-  .btn-signout {
-    padding: 6px 12px; background: transparent; border: 1px solid var(--border);
-    color: var(--text-muted); border-radius: 6px; font-size: 11px; cursor: pointer;
-    transition: all 0.2s; font-family: 'DM Sans', sans-serif;
-  }
-  .btn-signout:hover { border-color: var(--accent3); color: var(--accent3); }
-  .header-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+/*-HEADER - */
+header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 100; }
+.logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+.logo span { color: var(--accent); }
+.logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; }
+.guest-avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent3); background: rgba(255,107,107,0.15); display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: default; }
+.btn-signout { padding: 6px 12px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+.btn-signout:hover { border-color: var(--accent3); color: var(--accent3); }
+.header-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted); line-height: 1.5; }
 
-  /* ── NAV TABS ── */
-  .nav-tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
-  .nav-tabs::-webkit-scrollbar { display: none; }
-  .tab { padding: 14px 20px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.2s; letter-spacing: 0.02em; }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab:hover:not(.active) { color: var(--text); }
+/* NAV TABS */
+.nav-tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.nav-tabs::-webkit-scrollbar { display: none; }
+.tab { padding: 14px 20px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.2s; letter-spacing: 0.02em; }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab:hover:not(.active) { color: var(--text); }
 
-  /* ── PAGES ── */
-  .page { display: none; padding: 24px; max-width: 900px; margin: 0 auto; }
-  .page.active { display: block; }
+/* PAGES */
+.page { display: none; padding: 24px; max-width: 900px; margin: 0 auto; }
+.page.active { display: block; }
 
-  /* ── SCANNER ── */
-  .scanner-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
-  .section-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .preview-img { width: 100%; max-height: 220px; object-fit: contain; border-radius: 8px; margin-top: 12px; display: none; background: var(--bg); }
-  .btn-primary { width: 100%; padding: 15px; background: var(--accent); color: #0d0f14; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-  .btn-primary:hover { background: #f5ff80; transform: translateY(-1px); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-  .spinner { width: 18px; height: 18px; border: 2px solid rgba(13,15,20,0.3); border-top-color: #0d0f14; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .result-table { width: 100%; border-collapse: collapse; display: none; }
-  .result-table tr { border-bottom: 1px solid var(--border); }
-  .result-table td { padding: 11px 0; font-size: 14px; vertical-align: top; }
-  .result-table td:first-child { width: 42%; color: var(--text-muted); font-size: 12px; font-weight: 500; padding-right: 12px; }
-  .result-table td:last-child { font-family: 'DM Mono', monospace; font-size: 13px; }
-  .btn-save { width: 100%; padding: 13px; background: transparent; color: var(--accent2); border: 1px solid var(--accent2); border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 12px; display: none; }
-  .btn-save:hover { background: rgba(90,240,200,0.08); }
+/* SCANNER */
+.scanner-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+.section-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.preview-img { width: 100%; max-height: 220px; object-fit: contain; border-radius: 8px; margin-top: 12px; display: none; background: var(--bg); }
+.btn-primary { width: 100%; padding: 15px; background: var(--accent); color: #0d0f14; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 0.05em; cursor: pointer; transition: all 0.2s; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary:hover { background: #f5ff80; transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.spinner { width: 18px; height: 18px; border: 2px solid rgba(13,15,20,0.3); border-top-color: #0d0f14; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.result-table { width: 100%; border-collapse: collapse; display: none; }
+.result-table tr { border-bottom: 1px solid var(--border); }
+.result-table td { padding: 11px 0; font-size: 14px; vertical-align: top; }
+.result-table td:first-child { width: 42%; color: var(--text-muted); font-size: 12px; font-weight: 500; padding-right: 12px; }
+.result-table td:last-child { font-family: 'DM Mono', monospace; font-size: 13px; }
+.btn-save { width: 100%; padding: 13px; background: transparent; color: var(--accent2); border: 1px solid var(--accent2); border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 12px; display: none; }
+.btn-save:hover { background: rgba(90,240,200,0.08); }
+.queue-progress { margin-top: 10px; display: none; }
+.queue-bar-bg { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
+.queue-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s ease; }
+.queue-label { font-size: 11px; color: var(--text-muted); margin-top: 5px; font-family: 'DM Mono', monospace; text-align: center; }
+.key-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'DM Mono', monospace; margin-top: 6px; }
+.key-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
+.key-dot.ok { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+.key-dot.missing { background: var(--accent3); }
+.guest-banner { background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.25); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--accent3); }
+.guest-banner strong { font-weight: 700; }
 
-  /* Queue progress bar */
-  .queue-progress { margin-top: 10px; display: none; }
-  .queue-bar-bg { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
-  .queue-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s ease; }
-  .queue-label { font-size: 11px; color: var(--text-muted); margin-top: 5px; font-family: 'DM Mono', monospace; text-align: center; }
+/* DASHBOARD */
+.kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+@media(min-width:600px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
+.kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; overflow: hidden; }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--accent); }
+.kpi-card.green::before { background: var(--accent2); }
+.kpi-card.red::before { background: var(--accent3); }
+.kpi-card.blue::before { background: #5a9af0; }
+.kpi-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+.kpi-value { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; line-height: 1; }
+.kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+.chart-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 14px; }
+.bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; }
+.bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.6s cubic-bezier(0.34,1.56,0.64,1); min-height: 3px; opacity: 0.85; }
+.bar:hover { opacity: 1; }
+.bar-label { font-size: 9px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+.bar-val { font-size: 9px; color: var(--accent); font-family: 'DM Mono', monospace; }
+.heatmap-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.heatmap-day { width: 28px; height: 28px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--text-muted); cursor: default; font-family: 'DM Mono', monospace; transition: background 0.2s; }
+.heatmap-day.active-1 { background: rgba(232,255,90,0.15); border-color: rgba(232,255,90,0.3); color: var(--accent); }
+.heatmap-day.active-2 { background: rgba(232,255,90,0.35); border-color: rgba(232,255,90,0.5); color: var(--bg); }
+.heatmap-day.active-3 { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 700; }
 
-  /* API key status indicator */
-  .key-status {
-    display: flex; align-items: center; gap: 6px; font-size: 11px;
-    font-family: 'DM Mono', monospace; margin-top: 6px;
-  }
-  .key-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); flex-shrink: 0; }
-  .key-dot.ok { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
-  .key-dot.missing { background: var(--accent3); }
+/* REGISTROS */
+.filters-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.filter-select, .filter-input { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 9px 12px; font-size: 12px; font-family: 'DM Sans', sans-serif; outline: none; cursor: pointer; transition: border-color 0.2s; flex: 1; min-width: 120px; }
+.filter-select:focus, .filter-input:focus { border-color: var(--accent); }
+.filter-select option { background: var(--surface2); }
+.records-table-wrap { overflow-x: auto; }
+.records-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.records-table th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+.records-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 12px; white-space: nowrap; }
+.records-table tr:hover td { background: var(--surface2); }
+.badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; background: rgba(232,255,90,0.12); color: var(--accent); }
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+.empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+.btn-export { padding: 9px 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+.btn-export:hover { border-color: var(--accent2); color: var(--accent2); }
+.btn-danger { padding: 9px 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+.btn-danger:hover { border-color: var(--accent3); color: var(--accent3); }
+.top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; flex-wrap: wrap; }
+.totals-bar { display: flex; gap: 16px; padding: 12px; background: var(--surface2); border-radius: 0 0 8px 8px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+.totals-bar strong { color: var(--accent); font-family: 'Syne', sans-serif; }
+.tramos-grid { display: flex; flex-direction: column; gap: 8px; }
+.tramo-row { display: flex; align-items: center; gap: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; transition: border-color 0.2s; }
+.tramo-row:hover { border-color: var(--accent2); }
+.tramo-origen { font-size: 12px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tramo-arrow { font-size: 16px; color: var(--accent); flex-shrink: 0; }
+.tramo-destino { font-size: 12px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+.tramo-meta { display: flex; gap: 8px; margin-left: 8px; flex-shrink: 0; }
+.tramo-stat { display: flex; flex-direction: column; align-items: center; background: var(--surface2); border-radius: 6px; padding: 4px 9px; min-width: 48px; }
+.tramo-stat-val { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: var(--accent2); line-height: 1; }
+.tramo-stat-lbl { font-size: 9px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; margin-top: 2px; }
 
-  /* Guest mode banner */
-  .guest-banner {
-    background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.25);
-    border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
-    display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--accent3);
-  }
-  .guest-banner strong { font-weight: 700; }
+/* COMPARTIDOS/PERFIL */
+.shared-tabs { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+.shared-tab { flex: 1; padding: 11px; text-align: center; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s; background: var(--surface); }
+.shared-tab.active { background: var(--surface2); color: var(--accent); }
+.shared-tab:hover:not(.active) { color: var(--text); }
+.shared-panel { display: none; }
+.shared-panel.active { display: block; }
 
-  /* ── DASHBOARD ── */
-  .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
-  @media(min-width:600px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
-  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; overflow: hidden; }
-  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--accent); }
-  .kpi-card.green::before { background: var(--accent2); }
-  .kpi-card.red::before { background: var(--accent3); }
-  .kpi-card.blue::before { background: #5a9af0; }
-  .kpi-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
-  .kpi-value { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; line-height: 1; }
-  .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
-  .chart-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 14px; }
-  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; }
-  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
-  .bar { width: 100%; border-radius: 4px 4px 0 0; transition: height 0.6s cubic-bezier(0.34,1.56,0.64,1); min-height: 3px; opacity: 0.85; }
-  .bar:hover { opacity: 1; }
-  .bar-label { font-size: 9px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
-  .bar-val { font-size: 9px; color: var(--accent); font-family: 'DM Mono', monospace; }
-  .heatmap-row { display: flex; flex-wrap: wrap; gap: 4px; }
-  .heatmap-day { width: 28px; height: 28px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--text-muted); cursor: default; font-family: 'DM Mono', monospace; transition: background 0.2s; }
-  .heatmap-day.active-1 { background: rgba(232,255,90,0.15); border-color: rgba(232,255,90,0.3); color: var(--accent); }
-  .heatmap-day.active-2 { background: rgba(232,255,90,0.35); border-color: rgba(232,255,90,0.5); color: var(--bg); }
-  .heatmap-day.active-3 { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 700; }
+/* Perfil */
+.profile-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+.profile-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.profile-big-avatar { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--border); }
+.profile-guest-avatar { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--accent3); background: rgba(255, 107,107,0.15); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.profile-name { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
+.profile-email { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.alias-display { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
+.alias-label { font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; flex-shrink: 0; }
+.alias-value { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--accent2); flex: 1; }
+.alias-empty { color: var(--text-dim); font-size: 13px; flex: 1; }
+.grupos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.grupo-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.grupo-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
+.grupo-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
+.grupo-card.active-group { border-color: var(--accent2); }
+.grupo-name { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.grupo-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+.grupo-members { display: flex; gap: -6px; }
+.member-avatar { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--accent); margin-left: -6px; }
+.member-avatar:first-child { margin-left: 0; }
+.btn-new-group { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; background: transparent; border: 2px dashed var(--border); border-radius: 14px; color: var(--text-muted); font-size: 14px; cursor: pointer; transition: all 0.2s; width: 100%; font-family: 'DM Sans', sans-serif; }
+.btn-new-group:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* ── REGISTROS ── */
-  .filters-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-  .filter-select, .filter-input { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 9px 12px; font-size: 12px; font-family: 'DM Sans', sans-serif; outline: none; cursor: pointer; transition: border-color 0.2s; flex: 1; min-width: 120px; }
-  .filter-select:focus, .filter-input:focus { border-color: var(--accent); }
-  .filter-select option { background: var(--surface2); }
-  .records-table-wrap { overflow-x: auto; }
-  .records-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .records-table th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
-  .records-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 12px; white-space: nowrap; }
-  .records-table tr:hover td { background: var(--surface2); }
-  .badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; background: rgba(232,255,90,0.12); color: var(--accent); }
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
-  .empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
-  .btn-export { padding: 9px 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
-  .btn-export:hover { border-color: var(--accent2); color: var(--accent2); }
-  .btn-danger { padding: 9px 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
-  .btn-danger:hover { border-color: var(--accent3); color: var(--accent3); }
-  .top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 8px; flex-wrap: wrap; }
-  .totals-bar { display: flex; gap: 16px; padding: 12px; background: var(--surface2); border-radius: 0 0 8px 8px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
-  .totals-bar strong { color: var(--accent); font-family: 'Syne', sans-serif; }
-  .tramos-grid { display: flex; flex-direction: column; gap: 8px; }
-  .tramo-row { display: flex; align-items: center; gap: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; transition: border-color 0.2s; }
-  .tramo-row:hover { border-color: var(--accent2); }
-  .tramo-origen { font-size: 12px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tramo-arrow { font-size: 16px; color: var(--accent); flex-shrink: 0; }
-  .tramo-destino { font-size: 12px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
-  .tramo-meta { display: flex; gap: 8px; margin-left: 8px; flex-shrink: 0; }
-  .tramo-stat { display: flex; flex-direction: column; align-items: center; background: var(--surface2); border-radius: 6px; padding: 4px 9px; min-width: 48px; }
-  .tramo-stat-val { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 800; color: var(--accent2); line-height: 1; }
-  .tramo-stat-lbl { font-size: 9px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; margin-top: 2px; }
+/* Group workspace */
+.group-workspace { display: none; }
+.group-workspace.active { display: block; }
+.group-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.btn-back { padding: 8px 14px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+.btn-back:hover { border-color: var(--accent); color: var(--accent); }
+.group-name-display { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; flex: 1; }
+.online-dot { width: 8px; height: 8px; background: var(--accent2); border-radius: 50%; box-shadow: 0 0 6px var(--accent2); }
 
-  /* ── COMPARTIDOS / PERFIL ── */
-  .shared-tabs { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
-  .shared-tab { flex: 1; padding: 11px; text-align: center; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s; background: var(--surface); }
-  .shared-tab.active { background: var(--surface2); color: var(--accent); }
-  .shared-tab:hover:not(.active) { color: var(--text); }
-  .shared-panel { display: none; }
-  .shared-panel.active { display: block; }
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; }
+.modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+.field-group { margin-bottom: 16px; }
+.field-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.05em; text-transform: uppercase; }
+.field-input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 11px 13px; font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
+.field-input:focus { border-color: var(--accent); }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn-modal-cancel { flex: 1; padding: 12px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; font-size: 14px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+.btn-modal-ok { flex: 1; padding: 12px; background: var(--accent); border: none; color: #0d0f14; border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
 
-  /* Perfil */
-  .profile-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 16px; }
-  .profile-avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
-  .profile-big-avatar { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--border); }
-  .profile-guest-avatar { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--accent3); background: rgba(255,107,107,0.15); display: flex; align-items: center; justify-content: center; font-size: 24px; }
-  .profile-name { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
-  .profile-email { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-  .alias-display { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
-  .alias-label { font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; flex-shrink: 0; }
-  .alias-value { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--accent2); flex: 1; }
-  .alias-empty { color: var(--text-dim); font-size: 13px; flex: 1; }
+/* API selector */
+.api-selector-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.api-type-btn { flex: 1; padding: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; text-align: center; }
+.api-type-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,90,0.05); }
 
-  .grupos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 24px; }
-  .grupo-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
-  .grupo-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
-  .grupo-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
-  .grupo-card.active-group { border-color: var(--accent2); }
-  .grupo-name { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-  .grupo-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
-  .grupo-members { display: flex; gap: -6px; }
-  .member-avatar { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--accent); margin-left: -6px; }
-  .member-avatar:first-child { margin-left: 0; }
-  .btn-new-group { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; background: transparent; border: 2px dashed var(--border); border-radius: 14px; color: var(--text-muted); font-size: 14px; cursor: pointer; transition: all 0.2s; width: 100%; font-family: 'DM Sans', sans-serif; }
-  .btn-new-group:hover { border-color: var(--accent); color: var(--accent); }
+/* Toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--accent2); color: #0d0f14; padding: 11px 22px; border-radius: 50px; font-size: 13px; font-weight: 600; z-index: 999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.error { background: var(--accent3); color: white; }
 
-  /* Group workspace */
-  .group-workspace { display: none; }
-  .group-workspace.active { display: block; }
-  .group-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
-  .btn-back { padding: 8px 14px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
-  .btn-back:hover { border-color: var(--accent); color: var(--accent); }
-  .group-name-display { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; flex: 1; }
-  .online-dot { width: 8px; height: 8px; background: var(--accent2); border-radius: 50%; box-shadow: 0 0 6px var(--accent2); }
-
-  /* Modal */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; }
-  .modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
-  .field-group { margin-bottom: 16px; }
-  .field-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.05em; text-transform: uppercase; }
-  .field-input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 11px 13px; font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s; }
-  .field-input:focus { border-color: var(--accent); }
-  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-  .btn-modal-cancel { flex: 1; padding: 12px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; font-size: 14px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-  .btn-modal-ok { flex: 1; padding: 12px; background: var(--accent); border: none; color: #0d0f14; border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
-
-  /* API selector */
-  .api-selector-row { display: flex; gap: 8px; margin-bottom: 10px; }
-  .api-type-btn { flex: 1; padding: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; text-align: center; }
-  .api-type-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,90,0.05); }
-
-  /* Toast */
-  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--accent2); color: #0d0f14; padding: 11px 22px; border-radius: 50px; font-size: 13px; font-weight: 600; z-index: 999; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); white-space: nowrap; }
-  .toast.show { transform: translateX(-50%) translateY(0); }
-  .toast.error { background: var(--accent3); color: white; }
-
-  @media(max-width:480px) { .page { padding: 14px; } .scanner-card { padding: 16px; } .kpi-value { font-size: 20px; } }
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-  .page.active > * { animation: fadeUp 0.35s ease both; }
-  .page.active > *:nth-child(2) { animation-delay: 0.05s; }
-  .page.active > *:nth-child(3) { animation-delay: 0.10s; }
+@media(max-width:480px) { .page { padding: 14px; } .scanner-card { padding: 16px; } .kpi-value { font-size: 20px; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+.page.active > * { animation: fadeUp 0.35s ease both; }
+.page.active > *:nth-child(2) { animation-delay: 0.05s; }
+.page.active > *:nth-child(3) { animation-delay: 0.10s; }
 </style>
 </head>
-<body>
 
-<!-- ══ LOGIN ══ -->
+<body>
 <div id="loginScreen">
   <div class="login-logo">Remit<span>OS</span></div>
   <div class="login-sub">Control de Despachos</div>
@@ -306,13 +252,12 @@
   </button>
   <div class="login-divider"><span>o</span></div>
   <button class="btn-guest" onclick="doGuestLogin()">
-    👤 Entrar sin cuenta
+    Entrar sin cuenta
     <span class="guest-badge">DEMO</span>
   </button>
   <div class="login-note">En modo demo los datos no se guardan entre sesiones</div>
 </div>
 
-<!-- ══ APP ══ -->
 <div id="appShell" style="display:none">
   <header>
     <div class="logo"><div class="logo-dot"></div>Remit<span>OS</span></div>
@@ -327,49 +272,37 @@
   </header>
 
   <nav class="nav-tabs">
-    <div class="tab active" onclick="goTab('scanner',this)">📷 Escanear</div>
-    <div class="tab" onclick="goTab('dashboard',this)">📊 Dashboard</div>
-    <div class="tab" onclick="goTab('records',this)">🗃 Registros</div>
-    <div class="tab" onclick="goTab('shared',this)">🤝 Compartidos</div>
+    <div class="tab active" onclick="goTab('scanner', this)">Escanear</div>
+    <div class="tab" onclick="goTab('dashboard', this)">Dashboard</div>
+    <div class="tab" onclick="goTab('records', this)">Registros</div>
+    <div class="tab" onclick="goTab('shared', this)">Compartidos</div>
   </nav>
 
-  <!-- ══ SCANNER ══ -->
   <div class="page active" id="page-scanner">
     <div class="scanner-card">
       <div class="section-title">Configuración API</div>
-
-      <!-- Selector de proveedor -->
       <div class="api-selector-row">
-        <button class="api-type-btn active" id="btnTypeGemini" onclick="switchProvider('gemini')">✦ Gemini</button>
-        <button class="api-type-btn" id="btnTypeNvidia" onclick="switchProvider('nvidia')">⚡ NVIDIA</button>
+        <button class="api-type-btn active" id="btnTypeGemini" onclick="switchProvider('gemini')">Gemini</button>
+        <button class="api-type-btn" id="btnTypeNvidia" onclick="switchProvider('nvidia')">NVIDIA</button>
       </div>
-
-      <!-- Input de key + botón guardar -->
-      <div style="display:flex;gap:8px;margin-bottom:6px;">
-        <input class="field-input" id="apiKeyInput" type="password"
-          placeholder="Pega tu API Key aquí..."
-          style="font-family:'DM Mono',monospace;font-size:12px;">
-        <button style="padding:10px 14px;background:var(--accent);color:#0d0f14;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;" onclick="saveApiKey()">Guardar</button>
+      <div style="display: flex; gap:8px; margin-bottom:6px;">
+        <input class="field-input" id="apiKeyInput" type="password" placeholder="Pega tu API Key aquí..." style="font-family: 'DM Mono', monospace; font-size:12px;">
+        <button style="padding:10px 14px; background:var(--accent); color:#0d0f14; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;" onclick="saveApiKey()">Guardar</button>
       </div>
-
-      <!-- Estado de las keys guardadas -->
-      <div id="keyStatusRow" style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+      <div id="keyStatusRow" style="display: flex; gap: 16px; margin-bottom: 10px; flex-wrap:wrap;">
         <div class="key-status">
           <div class="key-dot" id="dotGemini"></div>
-          <span id="lblGemini" style="color:var(--text-muted);">Gemini: —</span>
+          <span id="lblGemini" style="color:var(--text-muted);">Gemini: </span>
         </div>
         <div class="key-status">
           <div class="key-dot" id="dotNvidia"></div>
           <span id="lblNvidia" style="color:var(--text-muted);">NVIDIA: —</span>
         </div>
       </div>
-
-      <select id="modeloSelect" onchange="saveModelo()" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;">
-        <!-- Gemini models -->
+      <select id="modeloSelect" onchange="saveModelo()" style="width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 12px; font-size:12px; font-family:'DM Sans',sans-serif; outline:none;">
         <option value="gemini-2.5-flash">Gemini 2.5 Flash (recomendado)</option>
         <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
         <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash 8B</option>
-        <!-- NVIDIA models -->
         <option value="nvidia/llama-3.2-11b-vision-instruct">NVIDIA Llama 3.2 11B Vision</option>
         <option value="nvidia/llama-3.2-90b-vision-instruct">NVIDIA Llama 3.2 90B Vision</option>
         <option value="microsoft/phi-3.5-vision-instruct">NVIDIA Phi-3.5 Vision</option>
@@ -379,13 +312,13 @@
     <div class="scanner-card">
       <div class="section-title">Cargar Remitos</div>
       <div style="display:flex;gap:10px;margin-bottom:4px;">
-        <label style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:18px 10px;background:var(--bg);border:2px dashed var(--border);border-radius:12px;cursor:pointer;transition:border-color 0.2s;">
+        <label style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:18px 10px; background:var(--bg); border:2px dashed var(--border); border-radius:12px; cursor:pointer; transition:border-color 0.2s;">
           <input type="file" id="inputImagen" accept="image/*" capture="environment" style="display:none">
           <span style="font-size:26px;">📷</span>
           <span style="font-size:12px;font-weight:600;">Cámara</span>
           <span style="font-size:10px;color:var(--text-muted);">Foto en vivo</span>
         </label>
-        <label style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:18px 10px;background:var(--bg);border:2px dashed var(--border);border-radius:12px;cursor:pointer;transition:border-color 0.2s;">
+        <label style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:18px 10px; background:var(--bg); border:2px dashed var(--border); border-radius:12px; cursor:pointer; transition:border-color 0.2s;">
           <input type="file" id="inputGaleria" accept="image/*" multiple style="display:none">
           <span style="font-size:26px;">🖼</span>
           <span style="font-size:12px;font-weight:600;">Galería</span>
@@ -410,7 +343,6 @@
     </div>
   </div>
 
-  <!-- ══ DASHBOARD ══ -->
   <div class="page" id="page-dashboard">
     <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
       <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text-muted);flex:1;">Viendo:</div>
@@ -431,7 +363,6 @@
     <div class="chart-card"><div class="chart-title">Top Chóferes</div><div class="bar-chart" id="chartChofer"><div style="color:var(--text-muted);font-size:12px;margin:auto;">Sin datos</div></div></div>
   </div>
 
-  <!-- ══ REGISTROS ══ -->
   <div class="page" id="page-records">
     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
       <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text-muted);">Fuente:</div>
@@ -465,6 +396,7 @@
       <select class="filter-select" id="filterDestino" onchange="renderRecords()"><option value="">Destino: todas</option></select>
     </div>
     <div id="tramosCard" style="display:none;margin-bottom:14px;"><div class="chart-card" style="padding:14px 18px;"><div class="chart-title" style="margin-bottom:10px;">Tramos</div><div id="tramosGrid"></div></div></div>
+    
     <div class="records-table-wrap">
       <table class="records-table" id="recordsTable">
         <thead><tr><th>#</th><th>Fecha</th><th>Remito</th><th>Litros</th><th>Origen</th><th>Destino</th><th>Chofer</th><th></th></tr></thead>
@@ -474,14 +406,12 @@
     </div>
   </div>
 
-  <!-- ══ COMPARTIDOS ══ -->
   <div class="page" id="page-shared">
-
     <div class="shared-tabs">
       <div class="shared-tab active" onclick="switchSharedTab('grupos', this)">🤝 Grupos</div>
       <div class="shared-tab" onclick="switchSharedTab('perfil', this)">👤 Mi Perfil</div>
     </div>
-
+    
     <div class="shared-panel active" id="sharedPanelGrupos">
       <div id="sharedList">
         <div class="top-row">
@@ -492,7 +422,7 @@
           <div style="color:var(--text-muted);font-size:13px;padding:20px 0;">Cargando grupos...</div>
         </div>
       </div>
-
+      
       <div class="group-workspace" id="groupWorkspace">
         <div class="group-header">
           <button class="btn-back" onclick="leaveGroupView()">← Volver</button>
@@ -500,7 +430,7 @@
           <div class="online-dot" title="En vivo"></div>
           <button class="btn-export" onclick="showGroupMembers()" style="font-size:11px;">👥 Miembros</button>
         </div>
-
+        
         <div class="scanner-card">
           <div class="section-title">Cargar Remito al Grupo</div>
           <div style="display:flex;gap:10px;margin-bottom:4px;">
@@ -523,23 +453,19 @@
             <span id="gBtnText">✦ Extraer Datos</span>
           </button>
         </div>
-
+        
         <div class="scanner-card" id="gResultCard" style="display:none">
           <div class="section-title">Datos Extraídos</div>
           <table class="result-table" id="gResultTable"></table>
           <button class="btn-save" id="gBtnGuardar">＋ Guardar en el Grupo</button>
         </div>
-
+        
         <div class="top-row" style="margin-top:8px;">
           <div class="section-title" style="margin:0;flex:1">Registros del Grupo</div>
           <button class="btn-export" onclick="exportExcelGroup()">⬇ Excel</button>
           <button class="btn-export" onclick="exportPDFGroup()">⬇ PDF</button>
-          <label class="btn-export" style="cursor:pointer;">📊 Imp. Excel
-            <input type="file" id="gInputExcel" accept=".xlsx,.xls" style="display:none" onchange="importExcelGroup(this)">
-          </label>
-          <label class="btn-export" style="cursor:pointer;">📄 Imp. PDF
-            <input type="file" id="gInputPDF" accept=".pdf" style="display:none" onchange="importPDFGroup(this)">
-          </label>
+          <label class="btn-export" style="cursor:pointer;">📊 Imp. Excel<input type="file" id="gInputExcel" accept=".xlsx,.xls" style="display:none" onchange="importExcelGroup(this)"></label>
+          <label class="btn-export" style="cursor:pointer;">📄 Imp. PDF<input type="file" id="gInputPDF" accept=".pdf" style="display:none" onchange="importPDFGroup(this)"></label>
           <button class="btn-danger" onclick="clearGroupAll()">🗑 Borrar</button>
         </div>
         <div class="filters-row">
@@ -556,7 +482,7 @@
         </div>
       </div>
     </div>
-
+    
     <div class="shared-panel" id="sharedPanelPerfil">
       <div class="profile-card">
         <div class="profile-avatar-row" id="profileAvatarRow"></div>
@@ -577,32 +503,20 @@
         </div>
       </div>
     </div>
-
-  </div><!-- end page-shared -->
-
-</div><!-- end appShell -->
-
-<div class="toast" id="toast"></div>
+  </div></div><div class="toast" id="toast"></div>
 
 <script>
-// ══════════════════════════════════════════
 // GLOBALS
-// ══════════════════════════════════════════
+const STORAGE_KEY_GEMINI = 'remitos_api_key_gemini';
+const STORAGE_KEY_NVIDIA = 'remitos_api_key_nvidia';
+const MODELO_STORAGE = 'remitos_modelo';
+const PROVIDER_STORAGE = 'remitos_provider';
 
-// ── API KEY STORAGE: una key por proveedor ──────────────────────────────────
-// Esto resuelve el bug principal: antes había un solo slot y se pisaban.
-// Ahora cada proveedor tiene su propia entrada en localStorage.
-const STORAGE_KEY_GEMINI  = 'remitos_api_key_gemini';
-const STORAGE_KEY_NVIDIA  = 'remitos_api_key_nvidia';
-const MODELO_STORAGE      = 'remitos_modelo';
-const PROVIDER_STORAGE    = 'remitos_provider'; // 'gemini' | 'nvidia'
-
-// Migrate legacy single-key storage if present
 (function migrateLegacy() {
   const legacy = localStorage.getItem('remitos_api_key');
   if (legacy) {
     const isNv = legacy.startsWith('nvapi-');
-    if (isNv && !localStorage.getItem(STORAGE_KEY_NVIDIA))  localStorage.setItem(STORAGE_KEY_NVIDIA, legacy);
+    if (isNv && !localStorage.getItem(STORAGE_KEY_NVIDIA)) localStorage.setItem(STORAGE_KEY_NVIDIA, legacy);
     if (!isNv && !localStorage.getItem(STORAGE_KEY_GEMINI)) localStorage.setItem(STORAGE_KEY_GEMINI, legacy);
     localStorage.removeItem('remitos_api_key');
   }
@@ -615,24 +529,20 @@ let API_KEYS = {
 };
 let MODELO = localStorage.getItem(MODELO_STORAGE) || 'gemini-2.5-flash';
 
-// ── App state ───────────────────────────────────────────────────────────────
 let currentUser = null;
 let isGuest = false;
 let userAlias = '';
 let registros = [];
 let unsubPersonal = null;
-
 let misGrupos = [];
 let activeGroupId = null;
 let activeGroupData = null;
 let groupRegistros = [];
 let unsubGroup = null;
-
 let scanQueue = [], scanIndex = 0, scanTotal = 0;
 let gScanQueue = [], gScanIndex = 0, gScanTotal = 0;
 let currentJson = null, gCurrentJson = null;
 
-// Rate limit NVIDIA: max 40 req/min
 const MAX_RPM = 40;
 let reqTimestamps = [];
 
@@ -641,15 +551,12 @@ const FIELD_LABELS = {
   bodega_origen: 'Bodega Origen', bodega_destino: 'Bodega Destino', nombre_chofer: 'Nombre del Chofer'
 };
 
-// ══════════════════════════════════════════
 // AUTH
-// ══════════════════════════════════════════
 function waitFB() {
   return new Promise(res => {
     const iv = setInterval(() => { if (window._fb) { clearInterval(iv); res(window._fb); } }, 50);
   });
 }
-
 async function initAuth() {
   const fb = await waitFB();
   fb.onAuthStateChanged(fb.auth, user => {
@@ -667,16 +574,13 @@ async function initAuth() {
     }
   });
 }
-
 function bootApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appShell').style.display = 'block';
-  document.getElementById('headerDate').textContent =
-    new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric' });
+  document.getElementById('headerDate').textContent = new Date().toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric' });
   initProviderUI();
   renderHeaderAvatar();
 }
-
 function renderHeaderAvatar() {
   const wrap = document.getElementById('headerAvatarWrap');
   if (isGuest) {
@@ -687,33 +591,20 @@ function renderHeaderAvatar() {
     wrap.innerHTML = '';
   }
 }
-
 async function doLogin() {
   const fb = await waitFB();
-  try {
-    await fb.signInWithPopup(fb.auth, fb.provider);
-  } catch(e) {
-    showToast('❌ Error al iniciar sesión', true);
-  }
+  try { await fb.signInWithPopup(fb.auth, fb.provider); } catch(e) { showToast('❌ Error al iniciar sesión', true); }
 }
-
 function doGuestLogin() {
-  isGuest = true;
-  currentUser = null;
-  registros = [];
-  misGrupos = [];
-  bootApp();
-  updateHeader();
+  isGuest = true; currentUser = null; registros = []; misGrupos = [];
+  bootApp(); updateHeader();
   const btnNuevo = document.getElementById('btnNuevoGrupo');
-  btnNuevo.disabled = true;
-  btnNuevo.style.opacity = '0.4';
+  btnNuevo.disabled = true; btnNuevo.style.opacity = '0.4';
   showToast('👤 Modo demo — los datos no se guardan');
 }
-
 async function doSignOut() {
   if (isGuest) {
-    isGuest = false;
-    registros = [];
+    isGuest = false; registros = [];
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('appShell').style.display = 'none';
     return;
@@ -722,156 +613,77 @@ async function doSignOut() {
   await fb.signOut(fb.auth);
 }
 
-// ══════════════════════════════════════════
-// API KEY MANAGEMENT — SEPARADO POR PROVEEDOR
-// ══════════════════════════════════════════
-
-/**
- * Cambia el proveedor activo y actualiza la UI mostrando la key guardada de ese proveedor.
- * No toca la key del otro proveedor.
- */
+// API KEY MANAGEMENT
 function switchProvider(provider) {
   currentProvider = provider;
   localStorage.setItem(PROVIDER_STORAGE, provider);
-
-  // Actualizar botones de selección
   document.getElementById('btnTypeGemini').classList.toggle('active', provider === 'gemini');
   document.getElementById('btnTypeNvidia').classList.toggle('active', provider === 'nvidia');
-
-  // Mostrar la key guardada del proveedor seleccionado en el input
   document.getElementById('apiKeyInput').value = API_KEYS[provider] || '';
-
-  // Ajustar modelo por defecto si no corresponde al proveedor
   const sel = document.getElementById('modeloSelect');
   const isNvModel = sel.value.startsWith('nvidia') || sel.value.startsWith('microsoft');
-  if (provider === 'nvidia' && !isNvModel) {
-    sel.value = 'nvidia/llama-3.2-11b-vision-instruct';
-    saveModelo();
-  } else if (provider === 'gemini' && isNvModel) {
-    sel.value = 'gemini-2.5-flash';
-    saveModelo();
-  }
-
+  if (provider === 'nvidia' && !isNvModel) { sel.value = 'nvidia/llama-3.2-11b-vision-instruct'; saveModelo(); }
+  else if (provider === 'gemini' && isNvModel) { sel.value = 'gemini-2.5-flash'; saveModelo(); }
   updateKeyStatusUI();
 }
-
-/**
- * Guarda la key del proveedor activo SIN tocar la del otro proveedor.
- */
 function saveApiKey() {
   const val = document.getElementById('apiKeyInput').value.trim();
   if (!val) { showToast('⚠ Ingresá una API Key', true); return; }
-
-  // Detectar proveedor por prefijo para evitar guardarla en el slot equivocado
   const isNv = val.startsWith('nvapi-');
-  if (isNv && currentProvider === 'gemini') {
-    showToast('⚠ Esa parece una key de NVIDIA. Cambiá el proveedor primero.', true);
-    return;
-  }
-  if (!isNv && currentProvider === 'nvidia') {
-    showToast('⚠ Esa parece una key de Gemini. Cambiá el proveedor primero.', true);
-    return;
-  }
-
+  if (isNv && currentProvider === 'gemini') { showToast('⚠ Esa parece una key de NVIDIA. Cambiá el proveedor primero.', true); return; }
+  if (!isNv && currentProvider === 'nvidia') { showToast('⚠ Esa parece una key de Gemini. Cambiá el proveedor primero.', true); return; }
   API_KEYS[currentProvider] = val;
   const storageKey = currentProvider === 'gemini' ? STORAGE_KEY_GEMINI : STORAGE_KEY_NVIDIA;
   localStorage.setItem(storageKey, val);
   updateKeyStatusUI();
   showToast(`✓ Key de ${currentProvider === 'gemini' ? 'Gemini' : 'NVIDIA'} guardada`);
 }
-
 function saveModelo() {
   MODELO = document.getElementById('modeloSelect').value;
   localStorage.setItem(MODELO_STORAGE, MODELO);
 }
-
-/** Inicializa la UI del proveedor al arrancar la app */
 function initProviderUI() {
   document.getElementById('modeloSelect').value = MODELO;
-  // Cargar key del proveedor actual en el input
   document.getElementById('apiKeyInput').value = API_KEYS[currentProvider] || '';
-  // Sincronizar botones
   document.getElementById('btnTypeGemini').classList.toggle('active', currentProvider === 'gemini');
   document.getElementById('btnTypeNvidia').classList.toggle('active', currentProvider === 'nvidia');
   updateKeyStatusUI();
 }
-
-/** Muestra indicadores de estado de cada key */
 function updateKeyStatusUI() {
-  const dotG = document.getElementById('dotGemini');
-  const lblG = document.getElementById('lblGemini');
-  const dotN = document.getElementById('dotNvidia');
-  const lblN = document.getElementById('lblNvidia');
-
-  if (API_KEYS.gemini) {
-    dotG.className = 'key-dot ok';
-    lblG.textContent = 'Gemini: ✓ guardada';
-    lblG.style.color = 'var(--accent2)';
-  } else {
-    dotG.className = 'key-dot missing';
-    lblG.textContent = 'Gemini: sin key';
-    lblG.style.color = 'var(--text-dim)';
-  }
-
-  if (API_KEYS.nvidia) {
-    dotN.className = 'key-dot ok';
-    lblN.textContent = 'NVIDIA: ✓ guardada';
-    lblN.style.color = 'var(--accent2)';
-  } else {
-    dotN.className = 'key-dot missing';
-    lblN.textContent = 'NVIDIA: sin key';
-    lblN.style.color = 'var(--text-dim)';
-  }
+  const dotG = document.getElementById('dotGemini'); const lblG = document.getElementById('lblGemini');
+  const dotN = document.getElementById('dotNvidia'); const lblN = document.getElementById('lblNvidia');
+  if (API_KEYS.gemini) { dotG.className = 'key-dot ok'; lblG.textContent = 'Gemini: ✓ guardada'; lblG.style.color = 'var(--accent2)'; }
+  else { dotG.className = 'key-dot missing'; lblG.textContent = 'Gemini: sin key'; lblG.style.color = 'var(--text-dim)'; }
+  if (API_KEYS.nvidia) { dotN.className = 'key-dot ok'; lblN.textContent = 'NVIDIA: ✓ guardada'; lblN.style.color = 'var(--accent2)'; }
+  else { dotN.className = 'key-dot missing'; lblN.textContent = 'NVIDIA: sin key'; lblN.style.color = 'var(--text-dim)'; }
 }
+function getActiveApiKey() { return API_KEYS[currentProvider] || ''; }
 
-/** Devuelve la API key del proveedor activo */
-function getActiveApiKey() {
-  return API_KEYS[currentProvider] || '';
-}
-
-// ══════════════════════════════════════════
 // ALIAS
-// ══════════════════════════════════════════
 async function loadUserAlias() {
   if (!currentUser) return;
   const fb = await waitFB();
   try {
     const snap = await fb.getDoc(fb.doc(fb.db, 'users', currentUser.uid, 'profile', 'data'));
-    if (snap.exists()) {
-      userAlias = snap.data().alias || '';
-      renderAliasUI();
-    }
-  } catch(e) { /* first time */ }
+    if (snap.exists()) { userAlias = snap.data().alias || ''; renderAliasUI(); }
+  } catch(e) {}
 }
-
 async function saveUserAlias(alias) {
   if (!currentUser) return;
   const fb = await waitFB();
   await fb.setDoc(fb.doc(fb.db, 'users', currentUser.uid, 'profile', 'data'), { alias });
-  userAlias = alias;
-  renderAliasUI();
+  userAlias = alias; renderAliasUI();
 }
-
 function renderAliasUI() {
-  const val = document.getElementById('aliasCurrentVal');
-  const empty = document.getElementById('aliasEmptyMsg');
-  if (userAlias) {
-    val.textContent = userAlias;
-    val.style.display = 'block';
-    empty.style.display = 'none';
-  } else {
-    val.style.display = 'none';
-    empty.style.display = 'block';
-  }
+  const val = document.getElementById('aliasCurrentVal'); const empty = document.getElementById('aliasEmptyMsg');
+  if (userAlias) { val.textContent = userAlias; val.style.display = 'block'; empty.style.display = 'none'; }
+  else { val.style.display = 'none'; empty.style.display = 'block'; }
 }
-
 function renderProfileCard() {
   const row = document.getElementById('profileAvatarRow');
   const guestNote = document.getElementById('guestProfileNote');
   if (isGuest) {
-    row.innerHTML = `
-      <div class="profile-guest-avatar">👤</div>
-      <div><div class="profile-name">Invitado</div><div class="profile-email">Modo demo</div></div>`;
+    row.innerHTML = `<div class="profile-guest-avatar">👤</div><div><div class="profile-name">Invitado</div><div class="profile-email">Modo demo</div></div>`;
     guestNote.style.display = 'block';
     document.querySelector('#sharedPanelPerfil .profile-card').style.opacity = '0.6';
     document.querySelector('#sharedPanelPerfil .profile-card').style.pointerEvents = 'none';
@@ -879,37 +691,23 @@ function renderProfileCard() {
     const name = currentUser.displayName || 'Usuario';
     const email = currentUser.email || '';
     const photo = currentUser.photoURL;
-    row.innerHTML = `
-      ${photo ? `<img class="profile-big-avatar" src="${photo}" alt="">` : '<div class="profile-guest-avatar">👤</div>'}
-      <div><div class="profile-name">${name}</div><div class="profile-email">${email}</div></div>`;
+    row.innerHTML = `${photo ? `<img class="profile-big-avatar" src="${photo}" alt="">` : '<div class="profile-guest-avatar">👤</div>'}<div><div class="profile-name">${name}</div><div class="profile-email">${email}</div></div>`;
     guestNote.style.display = 'none';
     document.querySelector('#sharedPanelPerfil .profile-card').style.opacity = '';
     document.querySelector('#sharedPanelPerfil .profile-card').style.pointerEvents = '';
   }
   renderAliasUI();
 }
-
 function showEditAlias() {
   if (isGuest) { showToast('Necesitás una cuenta Google para usar alias', true); return; }
-  createModal('Mi Alias en Grupos',
-    `<div class="field-group">
-      <div class="field-label">Alias (nombre visible en grupos)</div>
-      <input class="field-input" id="newAliasInput" placeholder="Ej: Lautaro" value="${userAlias}" autofocus>
-    </div>
-    <div style="font-size:12px;color:var(--text-muted);margin-top:-8px;">Este alias se usa cuando cargás remitos en grupos compartidos.</div>`,
-    async () => {
-      const alias = document.getElementById('newAliasInput').value.trim();
-      if (!alias) { showToast('Ingresá un alias', true); return false; }
-      await saveUserAlias(alias);
-      showToast('✓ Alias guardado: ' + alias);
-      return true;
-    }
-  );
+  createModal('Mi Alias en Grupos', `<div class="field-group"><div class="field-label">Alias (nombre visible en grupos)</div><input class="field-input" id="newAliasInput" placeholder="Ej: Lautaro" value="${userAlias}" autofocus></div><div style="font-size:12px;color:var(--text-muted);margin-top:-8px;">Este alias se usa cuando cargás remitos en grupos compartidos.</div>`, async () => {
+    const alias = document.getElementById('newAliasInput').value.trim();
+    if (!alias) { showToast('Ingresá un alias', true); return false; }
+    await saveUserAlias(alias); showToast('✓ Alias guardado: ' + alias); return true;
+  });
 }
 
-// ══════════════════════════════════════════
-// FIRESTORE — PERSONAL
-// ══════════════════════════════════════════
+// FIRESTORE - PERSONAL
 async function subscribePersonal() {
   if (unsubPersonal) unsubPersonal();
   const fb = await waitFB();
@@ -923,112 +721,54 @@ async function subscribePersonal() {
     if (activeTab.includes('Registro')) { buildFilters(); renderRecords(); }
   });
 }
-
 async function saveRegistroPersonal(entry) {
-  if (isGuest) {
-    entry._firestoreId = String(entry._id);
-    registros.unshift(entry);
-    updateHeader();
-    const activeTab = document.querySelector('.tab.active')?.textContent || '';
-    if (activeTab.includes('Registro')) { buildFilters(); renderRecords(); }
-    return;
-  }
+  if (isGuest) { entry._firestoreId = String(entry._id); registros.unshift(entry); updateHeader(); const activeTab = document.querySelector('.tab.active')?.textContent || ''; if (activeTab.includes('Registro')) { buildFilters(); renderRecords(); } return; }
   const fb = await waitFB();
-  const docRef = fb.doc(fb.db, 'users', currentUser.uid, 'remitos', String(entry._id));
-  await fb.setDoc(docRef, entry);
+  await fb.setDoc(fb.doc(fb.db, 'users', currentUser.uid, 'remitos', String(entry._id)), entry);
 }
-
 async function deleteRegistroPersonal(firestoreId) {
-  if (isGuest) {
-    registros = registros.filter(r => String(r._firestoreId||r._id) !== String(firestoreId));
-    updateHeader(); buildFilters(); renderRecords();
-    return;
-  }
+  if (isGuest) { registros = registros.filter(r => String(r._firestoreId||r._id) !== String(firestoreId)); updateHeader(); buildFilters(); renderRecords(); return; }
   const fb = await waitFB();
   await fb.deleteDoc(fb.doc(fb.db, 'users', currentUser.uid, 'remitos', firestoreId));
 }
-
 async function updateRegistroPersonal(entry) {
-  if (isGuest) {
-    const idx = registros.findIndex(r => String(r._firestoreId||r._id) === String(entry._firestoreId||entry._id));
-    if (idx >= 0) registros[idx] = entry;
-    buildFilters(); renderRecords();
-    return;
-  }
+  if (isGuest) { const idx = registros.findIndex(r => String(r._firestoreId||r._id) === String(entry._firestoreId||entry._id)); if (idx >= 0) registros[idx] = entry; buildFilters(); renderRecords(); return; }
   const fb = await waitFB();
   const id = entry._firestoreId || String(entry._id);
   await fb.setDoc(fb.doc(fb.db, 'users', currentUser.uid, 'remitos', id), entry, { merge: true });
 }
 
-// ══════════════════════════════════════════
-// FIRESTORE — GRUPOS
-// ══════════════════════════════════════════
+// FIRESTORE - GRUPOS
 async function loadGrupos() {
   if (isGuest) { renderGruposList(); return; }
   const fb = await waitFB();
   const q = fb.query(fb.collection(fb.db, 'groups'), fb.where('members', 'array-contains', currentUser.email));
   fb.onSnapshot(q, snap => {
     misGrupos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderGruposList();
-    updateDashSourceSelector();
-    updateRecordsSourceSelector();
+    renderGruposList(); updateDashSourceSelector(); updateRecordsSourceSelector();
   });
 }
-
 function renderGruposList() {
   const grid = document.getElementById('gruposGrid');
-  if (isGuest) {
-    grid.innerHTML = `<div class="guest-banner" style="grid-column:1/-1;">⚠️ <span><strong>Modo demo:</strong> los grupos requieren iniciar sesión con Google.</span></div>`;
-    return;
-  }
-  if (!misGrupos.length) {
-    grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px 0;">No pertenecés a ningún grupo aún. ¡Creá uno!</div>';
-    return;
-  }
-  grid.innerHTML = misGrupos.map(g => `
-    <div class="grupo-card" onclick="enterGroup('${g.id}')">
-      <div class="grupo-name">${g.name}</div>
-      <div class="grupo-meta">${g.members?.length || 1} miembro${g.members?.length !== 1 ? 's' : ''}</div>
-      <div class="grupo-members">
-        ${(g.memberAliases || []).slice(0,5).map(a =>
-          `<div class="member-avatar">${a.charAt(0).toUpperCase()}</div>`).join('')}
-      </div>
-    </div>`).join('');
+  if (isGuest) { grid.innerHTML = `<div class="guest-banner" style="grid-column:1/-1;">⚠️ <span><strong>Modo demo:</strong> los grupos requieren iniciar sesión con Google.</span></div>`; return; }
+  if (!misGrupos.length) { grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:20px 0;">No pertenecés a ningún grupo aún. ¡Creá uno!</div>'; return; }
+  grid.innerHTML = misGrupos.map(g => `<div class="grupo-card" onclick="enterGroup('${g.id}')"><div class="grupo-name">${g.name}</div><div class="grupo-meta">${g.members?.length || 1} miembro${g.members?.length !== 1 ? 's' : ''}</div><div class="grupo-members">${(g.memberAliases || []).slice(0,5).map(a => `<div class="member-avatar">${a.charAt(0).toUpperCase()}</div>`).join('')}</div></div>`).join('');
 }
-
 async function showCreateGroup() {
   if (isGuest) { showToast('Necesitás una cuenta Google para crear grupos', true); return; }
-  createModal('Nuevo Grupo', `
-    <div class="field-group"><div class="field-label">Nombre del grupo</div>
-      <input class="field-input" id="newGroupName" placeholder="Ej: Despachos Lujan" autofocus>
-    </div>
-    <div class="field-group"><div class="field-label">Tu alias en el grupo</div>
-      <input class="field-input" id="newGroupAlias" placeholder="Ej: Lautaro" value="${userAlias}">
-    </div>`,
-    async () => {
-      const name  = document.getElementById('newGroupName').value.trim();
-      const alias = document.getElementById('newGroupAlias').value.trim();
-      if (!name || !alias) { showToast('Completá todos los campos', true); return false; }
-      await createGroup(name, alias);
-      return true;
-    }
-  );
+  createModal('Nuevo Grupo', `<div class="field-group"><div class="field-label">Nombre del grupo</div><input class="field-input" id="newGroupName" placeholder="Ej: Despachos Lujan" autofocus></div><div class="field-group"><div class="field-label">Tu alias en el grupo</div><input class="field-input" id="newGroupAlias" placeholder="Ej: Lautaro" value="${userAlias}"></div>`, async () => {
+    const name = document.getElementById('newGroupName').value.trim();
+    const alias = document.getElementById('newGroupAlias').value.trim();
+    if (!name || !alias) { showToast('Completá todos los campos', true); return false; }
+    await createGroup(name, alias); return true;
+  });
 }
-
 async function createGroup(name, alias) {
   const fb = await waitFB();
-  const groupData = {
-    name,
-    createdBy: currentUser.uid,
-    createdAt: fb.serverTimestamp(),
-    members: [currentUser.email],
-    memberAliases: [alias],
-    memberMap: { [currentUser.email]: { alias, uid: currentUser.uid, photoURL: currentUser.photoURL || '' } }
-  };
+  const groupData = { name, createdBy: currentUser.uid, createdAt: fb.serverTimestamp(), members: [currentUser.email], memberAliases: [alias], memberMap: { [currentUser.email]: { alias, uid: currentUser.uid, photoURL: currentUser.photoURL || '' } } };
   await fb.addDoc(fb.collection(fb.db, 'groups'), groupData);
   showToast('✓ Grupo "' + name + '" creado');
 }
-
 async function enterGroup(groupId) {
   const fb = await waitFB();
   activeGroupId = groupId;
@@ -1036,26 +776,20 @@ async function enterGroup(groupId) {
   document.getElementById('activeGroupName').textContent = activeGroupData?.name || '—';
   document.getElementById('sharedList').style.display = 'none';
   document.getElementById('groupWorkspace').classList.add('active');
-
   if (unsubGroup) unsubGroup();
   const colRef = fb.collection(fb.db, 'groups', groupId, 'remitos');
   unsubGroup = fb.onSnapshot(colRef, snap => {
     groupRegistros = snap.docs.map(d => ({ ...d.data(), _firestoreId: d.id }));
     groupRegistros.sort((a,b) => (b._id||0) - (a._id||0));
-    buildGroupFilters();
-    renderGroupRecords();
+    buildGroupFilters(); renderGroupRecords();
   });
 }
-
 function leaveGroupView() {
   if (unsubGroup) { unsubGroup(); unsubGroup = null; }
-  activeGroupId = null;
-  activeGroupData = null;
-  groupRegistros = [];
+  activeGroupId = null; activeGroupData = null; groupRegistros = [];
   document.getElementById('sharedList').style.display = 'block';
   document.getElementById('groupWorkspace').classList.remove('active');
 }
-
 async function saveRegistroGroup(entry) {
   if (!activeGroupId) return;
   const fb = await waitFB();
@@ -1063,91 +797,46 @@ async function saveRegistroGroup(entry) {
   entry._cargadoPor = myAlias;
   await fb.setDoc(fb.doc(fb.db, 'groups', activeGroupId, 'remitos', String(entry._id)), entry);
 }
-
 async function deleteRegistroGroup(firestoreId) {
   const fb = await waitFB();
   await fb.deleteDoc(fb.doc(fb.db, 'groups', activeGroupId, 'remitos', firestoreId));
 }
-
 async function clearGroupAll() {
   if (!confirm('¿Borrar TODOS los registros del grupo? No se puede deshacer.')) return;
   const fb = await waitFB();
-  for (const r of groupRegistros) {
-    await fb.deleteDoc(fb.doc(fb.db, 'groups', activeGroupId, 'remitos', r._firestoreId));
-  }
+  for (const r of groupRegistros) { await fb.deleteDoc(fb.doc(fb.db, 'groups', activeGroupId, 'remitos', r._firestoreId)); }
   showToast('Registros del grupo eliminados');
 }
-
 async function showGroupMembers() {
   if (!activeGroupData) return;
   const members = activeGroupData.memberMap || {};
-  const memberList = Object.entries(members).map(([email, info]) =>
-    `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
-      <div><div style="font-weight:600;font-size:14px;">${info.alias}</div><div style="font-size:11px;color:var(--text-muted);">${email}</div></div>
-      <span style="font-size:11px;color:var(--text-muted);">${email === currentUser.email ? 'Vos' : 'Miembro'}</span>
-    </div>`).join('');
-
-  createModal('Miembros del Grupo', `
-    <div>${memberList || '<p style="color:var(--text-muted)">Sin miembros</p>'}</div>
-    <div style="margin-top:20px;">
-      <div class="field-label" style="margin-bottom:8px;">Invitar por email</div>
-      <div style="display:flex;gap:8px;">
-        <input class="field-input" id="inviteEmail" placeholder="email@ejemplo.com" style="flex:1;">
-        <input class="field-input" id="inviteAlias" placeholder="Alias" style="width:100px;">
-      </div>
-    </div>`,
-    async () => {
-      const email = document.getElementById('inviteEmail').value.trim().toLowerCase();
-      const alias = document.getElementById('inviteAlias').value.trim();
-      if (!email || !alias) return true;
-      await inviteMember(email, alias);
-      return true;
-    }, 'Invitar'
-  );
+  const memberList = Object.entries(members).map(([email, info]) => `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);"><div><div style="font-weight:600;font-size:14px;">${info.alias}</div><div style="font-size:11px;color:var(--text-muted);">${email}</div></div><span style="font-size:11px;color:var(--text-muted);">${email === currentUser.email ? 'Vos' : 'Miembro'}</span></div>`).join('');
+  createModal('Miembros del Grupo', `<div>${memberList || '<p style="color:var(--text-muted)">Sin miembros</p>'}</div><div style="margin-top:20px;"><div class="field-label" style="margin-bottom:8px;">Invitar por email</div><div style="display:flex;gap:8px;"><input class="field-input" id="inviteEmail" placeholder="email@ejemplo.com" style="flex:1;"><input class="field-input" id="inviteAlias" placeholder="Alias" style="width:100px;"></div></div>`, async () => {
+    const email = document.getElementById('inviteEmail').value.trim().toLowerCase();
+    const alias = document.getElementById('inviteAlias').value.trim();
+    if (!email || !alias) return true;
+    await inviteMember(email, alias); return true;
+  }, 'Invitar');
 }
-
 async function inviteMember(email, alias) {
   const fb = await waitFB();
   const groupRef = fb.doc(fb.db, 'groups', activeGroupId);
-  await fb.updateDoc(groupRef, {
-    members: fb.arrayUnion(email),
-    memberAliases: fb.arrayUnion(alias),
-    [`memberMap.${email.replace(/\./g,'_')}`]: { alias, photoURL: '' }
-  });
+  await fb.updateDoc(groupRef, { members: fb.arrayUnion(email), memberAliases: fb.arrayUnion(alias), [`memberMap.${email.replace(/\./g,'_')}`]: { alias, photoURL: '' } });
   showToast('✓ ' + alias + ' invitado al grupo');
 }
-
 function updateDashSourceSelector() {
-  const sel = document.getElementById('dashSource');
-  const cur = sel.value;
+  const sel = document.getElementById('dashSource'); const cur = sel.value;
   while (sel.options.length > 1) sel.remove(1);
-  misGrupos.forEach(g => {
-    const o = document.createElement('option');
-    o.value = 'group_' + g.id;
-    o.textContent = '🤝 ' + g.name;
-    sel.appendChild(o);
-  });
+  misGrupos.forEach(g => { const o = document.createElement('option'); o.value = 'group_' + g.id; o.textContent = '🤝 ' + g.name; sel.appendChild(o); });
   sel.value = cur;
 }
-
 function updateRecordsSourceSelector() {
-  const sel = document.getElementById('recordsSource');
-  const cur = sel.value;
+  const sel = document.getElementById('recordsSource'); const cur = sel.value;
   while (sel.options.length > 1) sel.remove(1);
-  misGrupos.forEach(g => {
-    const o = document.createElement('option');
-    o.value = 'group_' + g.id;
-    o.textContent = '🤝 ' + g.name;
-    sel.appendChild(o);
-  });
+  misGrupos.forEach(g => { const o = document.createElement('option'); o.value = 'group_' + g.id; o.textContent = '🤝 ' + g.name; sel.appendChild(o); });
   sel.value = cur;
 }
-
-function onRecordsSourceChange() {
-  buildFilters();
-  renderRecords();
-}
-
+function onRecordsSourceChange() { buildFilters(); renderRecords(); }
 function getActiveRecords() {
   const src = document.getElementById('recordsSource')?.value || 'personal';
   if (src === 'personal') return registros;
@@ -1156,9 +845,7 @@ function getActiveRecords() {
   return [];
 }
 
-// ══════════════════════════════════════════
 // SHARED TABS
-// ══════════════════════════════════════════
 function switchSharedTab(name, el) {
   document.querySelectorAll('.shared-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.shared-panel').forEach(p => p.classList.remove('active'));
@@ -1167,9 +854,7 @@ function switchSharedTab(name, el) {
   if (name === 'perfil') renderProfileCard();
 }
 
-// ══════════════════════════════════════════
-// API — NVIDIA / GEMINI UNIFIED
-// ══════════════════════════════════════════
+// API
 async function rateLimit() {
   if (currentProvider !== 'nvidia') return;
   const now = Date.now();
@@ -1181,7 +866,6 @@ async function rateLimit() {
   }
   reqTimestamps.push(Date.now());
 }
-
 async function comprimirImagen(archivo) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1191,11 +875,9 @@ async function comprimirImagen(archivo) {
       const img = new Image();
       img.onerror = () => reject(new Error('Imagen inválida o corrupta'));
       img.onload = () => {
-        const MAX_W = 1500;
-        let w = img.width, h = img.height;
+        const MAX_W = 1500; let w = img.width, h = img.height;
         if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
+        const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
         resolve(canvas.toDataURL('image/jpeg', 0.8).split(',')[1]);
       };
@@ -1203,96 +885,52 @@ async function comprimirImagen(archivo) {
     };
   });
 }
-
-const PROMPT_TEXT =
-  "Analiza el remito adjunto. Extrae exclusivamente los siguientes campos en formato JSON limpio " +
-  "(sin bloques de código markdown ni texto adicional): " +
-  "1) 'numero_remito': el número largo arriba a la derecha (ej. 00125414). " +
-  "2) 'fecha': formateada estrictamente como DD/MM/YYYY. " +
-  "3) 'litros': el valor numérico de 'Total Litros' o 'Vol. Total'. " +
-  "4) 'bodega_origen': el nombre de la empresa inmediatamente a la derecha de la etiqueta '[DESDE]'. " +
-  "5) 'bodega_destino': el nombre de la empresa inmediatamente a la derecha de la etiqueta '[HASTA]'. " +
-  "6) 'nombre_chofer': el nombre del conductor impreso abajo a la izquierda (ej. RIVERO JUAN CARLOS).";
-
+const PROMPT_TEXT = "Analiza el remito adjunto. Extrae exclusivamente los siguientes campos en formato JSON limpio (sin bloques de código markdown ni texto adicional): 1) 'numero_remito': el número largo arriba a la derecha (ej. 00125414). 2) 'fecha': formateada estrictamente como DD/MM/YYYY. 3) 'litros': el valor numérico de 'Total Litros' o 'Vol. Total'. 4) 'bodega_origen': el nombre de la empresa inmediatamente a la derecha de la etiqueta '[DESDE]'. 5) 'bodega_destino': el nombre de la empresa inmediatamente a la derecha de la etiqueta '[HASTA]'. 6) 'nombre_chofer': el nombre del conductor impreso abajo a la izquierda (ej. RIVERO JUAN CARLOS).";
 async function procesarImagen(archivo) {
   await rateLimit();
-
   const activeKey = getActiveApiKey();
   if (!activeKey) throw new Error(`No hay API Key guardada para ${currentProvider === 'gemini' ? 'Gemini' : 'NVIDIA'}. Guardá tu key en la sección de configuración.`);
-
   const cleanBase64 = await comprimirImagen(archivo);
   const esNvidia = currentProvider === 'nvidia';
-
   let url, headers = { 'Content-Type': 'application/json' }, bodyData;
-
   if (esNvidia) {
     url = 'https://integrate.api.nvidia.com/v1/chat/completions';
     headers['Authorization'] = `Bearer ${activeKey}`;
-    bodyData = {
-      model: MODELO, temperature: 0.1, top_p: 0.7, max_tokens: 1024,
-      messages: [{ role: 'user', content: [
-        { type: 'text', text: PROMPT_TEXT },
-        { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${cleanBase64}` } }
-      ]}]
-    };
+    bodyData = { model: MODELO, temperature: 0.1, top_p: 0.7, max_tokens: 1024, messages: [{ role: 'user', content: [{ type: 'text', text: PROMPT_TEXT }, { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${cleanBase64}` } }]}] };
   } else {
     url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${activeKey}`;
-    bodyData = {
-      contents: [{ parts: [{ text: PROMPT_TEXT }, { inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } }] }],
-      generationConfig: { temperature: 0.1 }
-    };
+    bodyData = { contents: [{ parts: [{ text: PROMPT_TEXT }, { inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } }] }], generationConfig: { temperature: 0.1 } };
   }
-
-  // Timeout de 30s
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000);
-
   let res;
-  try {
-    res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(bodyData), signal: controller.signal });
-  } catch(e) {
-    if (e.name === 'AbortError') throw new Error('Timeout: la API no respondió en 30 segundos');
-    throw e;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
+  try { res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(bodyData), signal: controller.signal }); } 
+  catch(e) { if (e.name === 'AbortError') throw new Error('Timeout: la API no respondió en 30 segundos'); throw e; } 
+  finally { clearTimeout(timeoutId); }
+  
   if (!res.ok) {
     let errMsg = 'HTTP ' + res.status;
-    try {
-      const errData = await res.json();
-      if (errData.error?.message) errMsg = 'API Error ' + (errData.error.code||res.status) + ': ' + errData.error.message;
-    } catch(_) { /* body no es JSON */ }
+    try { const errData = await res.json(); if (errData.error?.message) errMsg = 'API Error ' + (errData.error.code||res.status) + ': ' + errData.error.message; } catch(_) {}
     throw new Error(errMsg);
   }
-
   const data = await res.json();
   if (data.error) throw new Error('API Error ' + (data.error.code||'') + ': ' + data.error.message);
-
+  
   let raw = '';
-  if (esNvidia) {
-    raw = data.choices?.[0]?.message?.content?.trim() || '';
-  } else {
-    raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-  }
+  if (esNvidia) { raw = data.choices?.[0]?.message?.content?.trim() || ''; } 
+  else { raw = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || ''; }
+  
   raw = raw.replace(/```json|```/g, '').trim();
-
   if (!raw) throw new Error('La API devolvió una respuesta vacía. Intentá con otra imagen.');
-
-  try {
-    return JSON.parse(raw);
-  } catch(e) {
-    throw new Error('No se pudo interpretar la respuesta de la API. Respuesta: ' + raw.slice(0, 100));
-  }
+  try { return JSON.parse(raw); } 
+  catch(e) { throw new Error('No se pudo interpretar la respuesta de la API. Respuesta: ' + raw.slice(0, 100)); }
 }
 
-// ══════════════════════════════════════════
-// SCANNER — PERSONAL
-// ══════════════════════════════════════════
+// SCANNER - PERSONAL
 let activeInput = null;
-const inputImagen  = document.getElementById('inputImagen');
+const inputImagen = document.getElementById('inputImagen');
 const inputGaleria = document.getElementById('inputGaleria');
-const previewImg   = document.getElementById('previewImg');
+const previewImg = document.getElementById('previewImg');
 
 inputImagen.addEventListener('change', () => {
   if (!inputImagen.files.length) return;
@@ -1300,7 +938,6 @@ inputImagen.addEventListener('change', () => {
   previewImg.src = URL.createObjectURL(inputImagen.files[0]);
   previewImg.style.display = 'block';
 });
-
 inputGaleria.addEventListener('change', () => {
   const files = inputGaleria.files;
   if (!files.length) return;
@@ -1364,12 +1001,14 @@ document.getElementById('btnGuardar').addEventListener('click', async () => {
   }
 });
 
+// AQUI ESTÁ LA PRIMERA CORRECCIÓN
 function resetScanUI() {
   setBtnScanning(false);
   document.getElementById('btnText').textContent = '✦ Extraer Datos';
   document.getElementById('galeriaCount').textContent = 'Hasta 30 fotos';
   document.getElementById('queueProgress').style.display = 'none';
-  activeInput = null; scanQueue = []; scanIndex = 0; scanTotal = 0;
+  // activeInput = null; // ESTA LÍNEA ESTÁ COMENTADA PARA RESOLVER EL BUG
+  scanQueue = []; scanIndex = 0; scanTotal = 0;
 }
 
 function setBtnScanning(on, label='') {
@@ -1378,7 +1017,6 @@ function setBtnScanning(on, label='') {
   document.getElementById('spinnerEl').style.display = on ? 'block' : 'none';
   if (label) document.getElementById('btnText').textContent = label;
 }
-
 function updateQueueProgress(wrapId, fillId, labelId, idx, total) {
   const wrap = document.getElementById(wrapId);
   wrap.style.display = 'block';
@@ -1386,9 +1024,7 @@ function updateQueueProgress(wrapId, fillId, labelId, idx, total) {
   document.getElementById(labelId).textContent = `${idx} de ${total} procesados`;
 }
 
-// ══════════════════════════════════════════
-// SCANNER — GRUPO
-// ══════════════════════════════════════════
+// SCANNER - GRUPO
 let gActiveInput = null;
 document.getElementById('gInputImagen').addEventListener('change', function() {
   if (!this.files.length) return;
@@ -1401,7 +1037,6 @@ document.getElementById('gInputGaleria').addEventListener('change', function() {
   gActiveInput = this;
   document.getElementById('gGaleriaCount').textContent = files.length + ' foto(s)';
 });
-
 document.getElementById('gBtnEscanear').addEventListener('click', async () => {
   if (!gActiveInput?.files.length) { showToast('⚠ Seleccioná una imagen', true); return; }
   if (!getActiveApiKey()) { showToast('⚠ Configurá tu API Key en la pestaña Escanear', true); return; }
@@ -1455,12 +1090,14 @@ document.getElementById('gBtnGuardar').addEventListener('click', async () => {
   }
 });
 
+// AQUÍ ESTÁ LA SEGUNDA CORRECCIÓN
 function gResetScanUI() {
   gSetBtnScanning(false);
   document.getElementById('gBtnText').textContent = '✦ Extraer Datos';
   document.getElementById('gGaleriaCount').textContent = 'Hasta 30 fotos';
   document.getElementById('gQueueProgress').style.display = 'none';
-  gActiveInput = null; gScanQueue = []; gScanIndex = 0; gScanTotal = 0;
+  // gActiveInput = null; // ESTA LÍNEA ESTÁ COMENTADA PARA RESOLVER EL BUG
+  gScanQueue = []; gScanIndex = 0; gScanTotal = 0;
 }
 
 function gSetBtnScanning(on, label='') {
@@ -1470,9 +1107,7 @@ function gSetBtnScanning(on, label='') {
   if (label) document.getElementById('gBtnText').textContent = label;
 }
 
-// ══════════════════════════════════════════
 // RESULT TABLE
-// ══════════════════════════════════════════
 function renderResultTable(tableId, obj) {
   const tbl = document.getElementById(tableId);
   tbl.innerHTML = '';
@@ -1480,50 +1115,39 @@ function renderResultTable(tableId, obj) {
     const val = obj[key] ?? '';
     const accent = key === 'litros' || key === 'numero_remito';
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${label}</td><td><input data-key="${key}" value="${String(val).replace(/"/g,'&quot;')}"
-      style="background:transparent;border:none;border-bottom:1px solid var(--border);color:${accent?'var(--accent)':'var(--text)'};
-      font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;padding:2px 0;"
-      oninput="updateJson('${tableId}','${key}',this.value)"></td>`;
+    tr.innerHTML = `<td>${label}</td><td><input data-key="${key}" value="${String(val).replace(/"/g,'&quot;')}" style="background:transparent;border:none;border-bottom:1px solid var(--border);color:${accent?'var(--accent)':'var(--text)'};font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;padding:2px 0;" oninput="updateJson('${tableId}','${key}',this.value)"></td>`;
     tbl.appendChild(tr);
   }
   tbl.style.display = 'table';
 }
-
 function updateJson(tableId, key, value) {
-  if (tableId === 'resultTable' && currentJson)   currentJson[key] = value;
+  if (tableId === 'resultTable' && currentJson) currentJson[key] = value;
   if (tableId === 'gResultTable' && gCurrentJson) gCurrentJson[key] = value;
 }
 
-// ══════════════════════════════════════════
 // TABS
-// ══════════════════════════════════════════
 function goTab(id, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
   el.classList.add('active');
   if (id === 'dashboard') renderDashboard();
-  if (id === 'records')   { buildFilters(); renderRecords(); }
-  if (id === 'shared')    { renderGruposList(); }
+  if (id === 'records') { buildFilters(); renderRecords(); }
+  if (id === 'shared') { renderGruposList(); }
 }
 
-// ══════════════════════════════════════════
 // DASHBOARD
-// ══════════════════════════════════════════
 function renderDashboard() {
   const src = document.getElementById('dashSource')?.value || 'personal';
   let data = src === 'personal' ? registros : groupRegistros;
-
   const total = data.reduce((s,r) => s+(r.litros||0), 0);
   document.getElementById('kpiLitros').textContent = total > 0 ? total.toLocaleString('es-AR') : '—';
   document.getElementById('kpiRemitos').textContent = data.length;
   document.getElementById('kpiBodegas').textContent = new Set(data.map(r=>r.bodega_origen).filter(Boolean)).size;
   document.getElementById('kpiChoferes').textContent = new Set(data.map(r=>r.nombre_chofer).filter(Boolean)).size;
-
   const diasActivos = new Set(data.map(r=>fechaToISO(r.fecha)).filter(Boolean)).size;
   const prom = diasActivos > 0 ? Math.round(total/diasActivos) : 0;
   document.getElementById('kpiPromedio').textContent = prom > 0 ? prom.toLocaleString('es-AR') : '—';
-
   const bMap={}, cMap={}, mMap={};
   data.forEach(r => {
     if (r.bodega_origen) bMap[r.bodega_origen] = (bMap[r.bodega_origen]||0)+(r.litros||0);
@@ -1531,10 +1155,8 @@ function renderDashboard() {
     const iso = fechaToISO(r.fecha);
     if (iso) { const m=iso.slice(0,7); mMap[m]=(mMap[m]||0)+(r.litros||0); }
   });
-
   renderBarChart('chartBodega', bMap, 6, '#e8ff5a');
   renderBarChart('chartChofer', cMap, 6, '#5af0c8');
-
   const mLabels={};
   Object.entries(mMap).sort().forEach(([k,v]) => {
     const [yr,mo] = k.split('-');
@@ -1543,7 +1165,6 @@ function renderDashboard() {
   renderBarChart('chartMes', mLabels, 12, '#5a9af0');
   renderHeatmap(data);
 }
-
 function renderBarChart(elId, dataMap, maxBars, color) {
   const el = document.getElementById(elId);
   const entries = Object.entries(dataMap).sort((a,b)=>b[1]-a[1]).slice(0,maxBars);
@@ -1552,12 +1173,9 @@ function renderBarChart(elId, dataMap, maxBars, color) {
   el.innerHTML = entries.map(([label,val]) => {
     const pct = max ? Math.round((val/max)*90) : 0;
     const sh = label.length>10 ? label.slice(0,10)+'…' : label;
-    return `<div class="bar-wrap"><div class="bar-val">${val.toLocaleString('es-AR')}</div>
-      <div class="bar" style="height:${pct}px;background:${color};" title="${label}: ${val}"></div>
-      <div class="bar-label">${sh}</div></div>`;
+    return `<div class="bar-wrap"><div class="bar-val">${val.toLocaleString('es-AR')}</div><div class="bar" style="height:${pct}px;background:${color};" title="${label}: ${val}"></div><div class="bar-label">${sh}</div></div>`;
   }).join('');
 }
-
 function renderHeatmap(data) {
   const el = document.getElementById('heatmap');
   const today = new Date();
@@ -1575,12 +1193,10 @@ function renderHeatmap(data) {
     const key=d.toISOString().slice(0,10);
     const cnt=byDay[key]?.count||0;
     const cls=cnt===0?'':cnt===1?'active-1':cnt<=3?'active-2':'active-3';
-    html+=`<div class="heatmap-day ${cls}" ${cnt>0?`onclick="showDayDetail('${key}')" style="cursor:pointer;"`:''}
-      title="${key}: ${cnt} remitos">${d.getDate()}</div>`;
+    html+=`<div class="heatmap-day ${cls}" ${cnt>0?`onclick="showDayDetail('${key}')" style="cursor:pointer;"`:''} title="${key}: ${cnt} remitos">${d.getDate()}</div>`;
   }
   el.innerHTML=html;
 }
-
 function showDayDetail(key) {
   const src = document.getElementById('dashSource')?.value || 'personal';
   const data = src === 'personal' ? registros : groupRegistros;
@@ -1596,24 +1212,18 @@ function showDayDetail(key) {
   const [yr,mo,dy]=key.split('-');
   const f=new Date(yr,mo-1,dy).toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('dayDetailTitle').textContent=f.charAt(0).toUpperCase()+f.slice(1);
-  document.getElementById('dayDetailContent').innerHTML=
-    `<div>🚛 <strong>${d.count}</strong> viaje${d.count>1?'s':''}</div>
-     <div>💧 <strong>${d.litros.toLocaleString('es-AR')}</strong> litros</div>
-     <div>🏭 ${[...d.bodegas].join(', ')||'—'}</div>
-     <div>👤 ${[...d.choferes].join(', ')||'—'}</div>`;
+  document.getElementById('dayDetailContent').innerHTML= `<div>🚛 <strong>${d.count}</strong> viaje${d.count>1?'s':''}</div><div>💧 <strong>${d.litros.toLocaleString('es-AR')}</strong> litros</div><div>🏭 ${[...d.bodegas].join(', ')||'—'}</div><div>👤 ${[...d.choferes].join(', ')||'—'}</div>`;
   det.style.display='block';
 }
 
-// ══════════════════════════════════════════
 // RECORDS
-// ══════════════════════════════════════════
 function buildFilters() {
   const data = getActiveRecords();
   const meses=new Set(), choferes=new Set(), origenes=new Set(), destinos=new Set();
   data.forEach(r=>{
     if(r._ts) meses.add(r._ts.slice(0,7));
     if(r.nombre_chofer) choferes.add(r.nombre_chofer);
-    if(r.bodega_origen)  origenes.add(r.bodega_origen);
+    if(r.bodega_origen) origenes.add(r.bodega_origen);
     if(r.bodega_destino) destinos.add(r.bodega_destino);
   });
   fillFilter('filterMes',[...meses].sort().reverse(),m=>{
@@ -1624,18 +1234,13 @@ function buildFilters() {
   fillFilter('filterOrigen',[...origenes].sort());
   fillFilter('filterDestino',[...destinos].sort());
 }
-
 function fillFilter(id, values, labelFn) {
   const sel=document.getElementById(id); if(!sel) return;
   const cur=sel.value;
   while(sel.options.length>1) sel.remove(1);
-  values.forEach(v=>{
-    const o=document.createElement('option'); o.value=v;
-    o.textContent=labelFn?labelFn(v):v; sel.appendChild(o);
-  });
+  values.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=labelFn?labelFn(v):v; sel.appendChild(o); });
   if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
 }
-
 function renderRecords() {
   const data = getActiveRecords();
   const mes=document.getElementById('filterMes').value;
@@ -1647,7 +1252,7 @@ function renderRecords() {
   const hasta=document.getElementById('filterHasta').value;
   const desdeDate=desde?new Date(desde):null;
   const hastaDate=hasta?new Date(hasta+'T23:59:59'):null;
-
+  
   let filtered=data.filter(r=>{
     if(mes && !r._ts?.startsWith(mes)) return false;
     if(chofer && r.nombre_chofer!==chofer) return false;
@@ -1665,11 +1270,9 @@ function renderRecords() {
     if(!da||!db) return 0;
     return orden==='asc'?da-db:db-da;
   });
-
+  
   const tramosCard=document.getElementById('tramosCard');
-  if(origen||destino){renderTramos(filtered);tramosCard.style.display='block';}
-  else tramosCard.style.display='none';
-
+  if(origen||destino){renderTramos(filtered);tramosCard.style.display='block';} else tramosCard.style.display='none';
   const tbody=document.getElementById('recordsTbody');
   const empty=document.getElementById('emptyState');
   let totalsBar=document.getElementById('totalsBar');
@@ -1681,75 +1284,28 @@ function renderRecords() {
   empty.style.display='none';
   const totalL=filtered.reduce((s,r)=>s+(r.litros||0),0);
   totalsBar.style.display='flex';
-  totalsBar.innerHTML=`<span>Viajes: <strong>${filtered.length}</strong></span>
-    <span>Litros: <strong>${totalL.toLocaleString('es-AR')} L</strong></span>
-    ${origen?`<span>Desde: <strong>${origen}</strong></span>`:''}
-    ${destino?`<span>Hasta: <strong>${destino}</strong></span>`:''}`;
-
-  tbody.innerHTML=filtered.map(r=>`
-    <tr>
-      <td style="color:var(--text-muted)">${data.length-data.indexOf(r)}</td>
-      <td>${r.fecha||'—'}</td>
-      <td><span class="badge">${r.numero_remito||'—'}</span></td>
-      <td style="color:var(--accent)">${r.litros?r.litros.toLocaleString('es-AR')+' L':'—'}</td>
-      <td>${r.bodega_origen||'—'}</td>
-      <td>${r.bodega_destino||'—'}</td>
-      <td>${r.nombre_chofer||'—'}</td>
-      <td style="white-space:nowrap">
-        <button onclick="editRegistro('${r._firestoreId||r._id}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:3px 5px">✏️</button>
-        <button onclick="deleteRegistroUI('${r._firestoreId||r._id}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:3px 5px">🗑</button>
-      </td>
-    </tr>`).join('');
+  totalsBar.innerHTML=`<span>Viajes: <strong>${filtered.length}</strong></span><span>Litros: <strong>${totalL.toLocaleString('es-AR')} L</strong></span>${origen?`<span>Desde: <strong>${origen}</strong></span>`:''}${destino?`<span>Hasta: <strong>${destino}</strong></span>`:''}`;
+  
+  tbody.innerHTML=filtered.map(r=>`<tr><td style="color:var(--text-muted)">${data.length-data.indexOf(r)}</td><td>${r.fecha||'—'}</td><td><span class="badge">${r.numero_remito||'—'}</span></td><td style="color:var(--accent)">${r.litros?r.litros.toLocaleString('es-AR')+' L':'—'}</td><td>${r.bodega_origen||'—'}</td><td>${r.bodega_destino||'—'}</td><td>${r.nombre_chofer||'—'}</td><td style="white-space:nowrap"><button onclick="editRegistro('${r._firestoreId||r._id}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:3px 5px">✏️</button><button onclick="deleteRegistroUI('${r._firestoreId||r._id}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:3px 5px">🗑</button></td></tr>`).join('');
 }
-
 function buildGroupFilters() {
   const meses=new Set(), choferes=new Set();
-  groupRegistros.forEach(r=>{
-    if(r._ts) meses.add(r._ts.slice(0,7));
-    if(r.nombre_chofer) choferes.add(r.nombre_chofer);
-  });
-  fillFilter('gFilterMes',[...meses].sort().reverse(),m=>{
-    const[y,mo]=m.split('-');
-    return new Date(y,mo-1).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
-  });
+  groupRegistros.forEach(r=>{ if(r._ts) meses.add(r._ts.slice(0,7)); if(r.nombre_chofer) choferes.add(r.nombre_chofer); });
+  fillFilter('gFilterMes',[...meses].sort().reverse(),m=>{ const[y,mo]=m.split('-'); return new Date(y,mo-1).toLocaleDateString('es-AR',{month:'long',year:'numeric'}); });
   fillFilter('gFilterChofer',[...choferes].sort());
 }
-
 function renderGroupRecords() {
   const mes=document.getElementById('gFilterMes').value;
   const chofer=document.getElementById('gFilterChofer').value;
   const orden=document.getElementById('gFilterOrden').value;
-  let filtered=groupRegistros.filter(r=>{
-    if(mes&&!r._ts?.startsWith(mes)) return false;
-    if(chofer&&r.nombre_chofer!==chofer) return false;
-    return true;
-  });
-  filtered.sort((a,b)=>{
-    const da=parseFecha(a.fecha),db=parseFecha(b.fecha);
-    if(!da||!db) return 0;
-    return orden==='asc'?da-db:db-da;
-  });
-
+  let filtered=groupRegistros.filter(r=>{ if(mes&&!r._ts?.startsWith(mes)) return false; if(chofer&&r.nombre_chofer!==chofer) return false; return true; });
+  filtered.sort((a,b)=>{ const da=parseFecha(a.fecha),db=parseFecha(b.fecha); if(!da||!db) return 0; return orden==='asc'?da-db:db-da; });
   const tbody=document.getElementById('gRecordsTbody');
   const empty=document.getElementById('gEmptyState');
   if(!filtered.length){tbody.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
-  tbody.innerHTML=filtered.map(r=>`
-    <tr>
-      <td style="color:var(--text-muted)">${groupRegistros.indexOf(r)+1}</td>
-      <td>${r.fecha||'—'}</td>
-      <td><span class="badge">${r.numero_remito||'—'}</span></td>
-      <td style="color:var(--accent)">${r.litros?r.litros.toLocaleString('es-AR')+' L':'—'}</td>
-      <td>${r.bodega_origen||'—'}</td>
-      <td>${r.bodega_destino||'—'}</td>
-      <td>${r.nombre_chofer||'—'}</td>
-      <td style="font-size:11px;color:var(--text-muted)">${r._cargadoPor||'—'}</td>
-      <td>
-        <button onclick="deleteGroupRegistroUI('${r._firestoreId}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:3px 5px">🗑</button>
-      </td>
-    </tr>`).join('');
+  tbody.innerHTML=filtered.map(r=>`<tr><td style="color:var(--text-muted)">${groupRegistros.indexOf(r)+1}</td><td>${r.fecha||'—'}</td><td><span class="badge">${r.numero_remito||'—'}</span></td><td style="color:var(--accent)">${r.litros?r.litros.toLocaleString('es-AR')+' L':'—'}</td><td>${r.bodega_origen||'—'}</td><td>${r.bodega_destino||'—'}</td><td>${r.nombre_chofer||'—'}</td><td style="font-size:11px;color:var(--text-muted)">${r._cargadoPor||'—'}</td><td><button onclick="deleteGroupRegistroUI('${r._firestoreId}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:3px 5px">🗑</button></td></tr>`).join('');
 }
-
 function renderTramos(data) {
   const tMap={};
   data.forEach(r=>{
@@ -1760,91 +1316,50 @@ function renderTramos(data) {
   const entries=Object.values(tMap).sort((a,b)=>b.litros-a.litros);
   const el=document.getElementById('tramosGrid');
   if(!entries.length){el.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin resultados.</p>';return;}
-  el.innerHTML=`<div class="tramos-grid">${entries.map(t=>`
-    <div class="tramo-row">
-      <span class="tramo-origen">${t.origen||'—'}</span>
-      <span class="tramo-arrow">→</span>
-      <span class="tramo-destino">${t.destino||'—'}</span>
-      <div class="tramo-meta">
-        <div class="tramo-stat"><span class="tramo-stat-val">${t.viajes}</span><span class="tramo-stat-lbl">viajes</span></div>
-        <div class="tramo-stat"><span class="tramo-stat-val">${(t.litros/1000).toFixed(1)}k</span><span class="tramo-stat-lbl">litros</span></div>
-      </div>
-    </div>`).join('')}</div>`;
+  el.innerHTML=`<div class="tramos-grid">${entries.map(t=>`<div class="tramo-row"><span class="tramo-origen">${t.origen||'—'}</span><span class="tramo-arrow">→</span><span class="tramo-destino">${t.destino||'—'}</span><div class="tramo-meta"><div class="tramo-stat"><span class="tramo-stat-val">${t.viajes}</span><span class="tramo-stat-lbl">viajes</span></div><div class="tramo-stat"><span class="tramo-stat-val">${(t.litros/1000).toFixed(1)}k</span><span class="tramo-stat-lbl">litros</span></div></div></div>`).join('')}</div>`;
 }
 
-// ══════════════════════════════════════════
 // EDIT / DELETE
-// ══════════════════════════════════════════
 function editRegistro(id) {
   const src = document.getElementById('recordsSource')?.value || 'personal';
   const data = src === 'personal' ? registros : groupRegistros;
   const r = data.find(x => String(x._firestoreId||x._id) === String(id));
   if (!r) return;
-  createModal('Editar Registro',
-    Object.entries(FIELD_LABELS).map(([key,label])=>`
-      <div class="field-group">
-        <div class="field-label">${label}</div>
-        <input class="field-input" data-key="${key}" value="${String(r[key]??'').replace(/"/g,'&quot;')}">
-      </div>`).join(''),
-    async (overlay) => {
-      overlay.querySelectorAll('input[data-key]').forEach(input=>{
-        const k=input.dataset.key;
-        r[k]=k==='litros'?(parseFloat(input.value.replace(/[^\d.]/g,''))||0):k==='fecha'?normalizeDate(input.value):input.value;
-      });
-      if (src === 'personal') await updateRegistroPersonal(r);
-      else await saveRegistroGroup(r);
-      showToast('✓ Actualizado');
-      return true;
-    }
-  );
+  createModal('Editar Registro', Object.entries(FIELD_LABELS).map(([key,label])=>`<div class="field-group"><div class="field-label">${label}</div><input class="field-input" data-key="${key}" value="${String(r[key]??'').replace(/"/g,'&quot;')}"></div>`).join(''), async (overlay) => {
+    overlay.querySelectorAll('input[data-key]').forEach(input=>{ const k=input.dataset.key; r[k]=k==='litros'?(parseFloat(input.value.replace(/[^\d.]/g,''))||0):k==='fecha'?normalizeDate(input.value):input.value; });
+    if (src === 'personal') await updateRegistroPersonal(r); else await saveRegistroGroup(r);
+    showToast('✓ Actualizado'); return true;
+  });
 }
-
 async function deleteRegistroUI(id) {
   if (!confirm('¿Borrar este registro?')) return;
   const src = document.getElementById('recordsSource')?.value || 'personal';
   if (src === 'personal') await deleteRegistroPersonal(String(id));
   showToast('Eliminado');
 }
-
 async function deleteGroupRegistroUI(firestoreId) {
   if (!confirm('¿Borrar este registro del grupo?')) return;
   await deleteRegistroGroup(firestoreId);
   showToast('Eliminado del grupo');
 }
-
 async function clearAll() {
   const src = document.getElementById('recordsSource')?.value || 'personal';
   if (!confirm('¿Borrar TODOS los registros? No se puede deshacer.')) return;
   const data = src === 'personal' ? registros : groupRegistros;
-  if (isGuest) {
-    registros = [];
-    updateHeader(); buildFilters(); renderRecords();
-    showToast('Registros eliminados');
-    return;
-  }
+  if (isGuest) { registros = []; updateHeader(); buildFilters(); renderRecords(); showToast('Registros eliminados'); return; }
   const fb = await waitFB();
   for (const r of data) {
     const fsId = r._firestoreId || String(r._id);
-    if (src === 'personal') {
-      await fb.deleteDoc(fb.doc(fb.db,'users',currentUser.uid,'remitos',fsId));
-    } else if (activeGroupId) {
-      await fb.deleteDoc(fb.doc(fb.db,'groups',activeGroupId,'remitos',fsId));
-    }
+    if (src === 'personal') { await fb.deleteDoc(fb.doc(fb.db,'users',currentUser.uid,'remitos',fsId)); } 
+    else if (activeGroupId) { await fb.deleteDoc(fb.doc(fb.db,'groups',activeGroupId,'remitos',fsId)); }
   }
   showToast('Registros eliminados');
 }
 
-// ══════════════════════════════════════════
 // EXPORT
-// ══════════════════════════════════════════
-function getExportData() {
-  const src = document.getElementById('recordsSource')?.value || 'personal';
-  return src === 'personal' ? registros : groupRegistros;
-}
-
+function getExportData() { const src = document.getElementById('recordsSource')?.value || 'personal'; return src === 'personal' ? registros : groupRegistros; }
 function exportExcel() { exportExcelFrom(getExportData(), new Date().toISOString().slice(0,10)); }
 function exportExcelGroup() { exportExcelFrom(groupRegistros, 'grupo_'+new Date().toISOString().slice(0,10)); }
-
 function exportExcelFrom(data, suffix) {
   if (!data.length) { showToast('No hay datos', true); return; }
   const headers=['numero_remito','fecha','litros','bodega_origen','bodega_destino','nombre_chofer'];
@@ -1856,10 +1371,8 @@ function exportExcelFrom(data, suffix) {
   XLSX.writeFile(wb,`remitos_${suffix}.xlsx`);
   showToast('✓ Excel descargado');
 }
-
 function exportPDF() { exportPDFFrom(getExportData()); }
 function exportPDFGroup() { exportPDFFrom(groupRegistros); }
-
 function exportPDFFrom(data) {
   if (!data.length) { showToast('No hay datos', true); return; }
   const {jsPDF}=window.jspdf;
@@ -1874,24 +1387,18 @@ function exportPDFFrom(data) {
   doc.text('Total litros: '+totalL.toLocaleString('es-AR'),60,27);
   doc.autoTable({
     head:[['Remito','Fecha','Litros','Origen','Destino','Chofer']],
-    body:filtered.map(r=>[r.numero_remito||'',normalizeDate(String(r.fecha||'')),
-      (r.litros||0).toLocaleString('es-AR'),r.bodega_origen||'',r.bodega_destino||'',r.nombre_chofer||'']),
+    body:filtered.map(r=>[r.numero_remito||'',normalizeDate(String(r.fecha||'')), (r.litros||0).toLocaleString('es-AR'),r.bodega_origen||'',r.bodega_destino||'',r.nombre_chofer||'']),
     startY:32,styles:{fontSize:8,cellPadding:2},
     headStyles:{fillColor:[30,32,48],textColor:[232,255,90],fontStyle:'bold'},
     alternateRowStyles:{fillColor:[245,245,250]},margin:{left:14,right:14}
   });
-  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(filtered.map(r=>({
-    numero_remito:r.numero_remito,fecha:normalizeDate(String(r.fecha||'')),litros:r.litros,
-    bodega_origen:r.bodega_origen,bodega_destino:r.bodega_destino,nombre_chofer:r.nombre_chofer
-  }))))));
+  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(filtered.map(r=>({numero_remito:r.numero_remito,fecha:normalizeDate(String(r.fecha||'')),litros:r.litros,bodega_origen:r.bodega_origen,bodega_destino:r.bodega_destino,nombre_chofer:r.nombre_chofer}))))));
   doc.setProperties({subject:'REMITOS_DATA:'+b64});
   doc.save(`remitos_${new Date().toISOString().slice(0,10)}.pdf`);
   showToast('✓ PDF descargado');
 }
 
-// ══════════════════════════════════════════
 // IMPORT
-// ══════════════════════════════════════════
 async function importarDesdeExcel(file, saveFn) {
   const reader = new FileReader();
   reader.onload = async (e) => {
@@ -1901,51 +1408,37 @@ async function importarDesdeExcel(file, saveFn) {
       const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
       if(!rows.length){showToast('Archivo vacío',true);return;}
       const colMap={
-        numero_remito:['REMITO','remito','numero_remito','Remito'],
-        fecha:['FECHA','fecha','Fecha','DATE'],
-        litros:['LITROS','litros','Litros','CANTIDAD'],
-        bodega_origen:['DESDE','desde','bodega_origen','ORIGEN','origen','Origen'],
-        bodega_destino:['HASTA','hasta','bodega_destino','DESTINO','destino','Destino'],
-        nombre_chofer:['NOMBRE','nombre','nombre_chofer','CHOFER','chofer','Chofer']
+        numero_remito:['REMITO','remito','numero_remito','Remito'], fecha:['FECHA','fecha','Fecha','DATE'],
+        litros:['LITROS','litros','Litros','CANTIDAD'], bodega_origen:['DESDE','desde','bodega_origen','ORIGEN','origen','Origen'],
+        bodega_destino:['HASTA','hasta','bodega_destino','DESTINO','destino','Destino'], nombre_chofer:['NOMBRE','nombre','nombre_chofer','CHOFER','chofer','Chofer']
       };
       function getVal(row,keys){for(const k of keys){if(row[k]!==undefined&&row[k]!=='') return row[k];}return '';}
       function excelDate(val){
-        const str=String(val).trim();
-        const num=parseFloat(str);
+        const str=String(val).trim(); const num=parseFloat(str);
         if(!isNaN(num)&&num>1000&&num<100000&&!str.includes('/')&&!str.includes('-')){
           const d=new Date(Math.round((num-25569)*86400*1000));
           return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+d.getUTCFullYear();
         }
-        if(str.includes('/')){const p=str.split('/');if(p.length===3&&p[2].length===4){
-          const a=parseInt(p[0]),b=parseInt(p[1]);
-          if(a<=12&&b>12) return String(b).padStart(2,'0')+'/'+String(a).padStart(2,'0')+'/'+p[2];
-          return String(a).padStart(2,'0')+'/'+String(b).padStart(2,'0')+'/'+p[2];
-        }}
-        if(str.includes('-')){const p=str.split('-');if(p.length===3&&p[0].length===4)
-          return p[2].padStart(2,'0')+'/'+p[1].padStart(2,'0')+'/'+p[0];}
+        if(str.includes('/')){const p=str.split('/');if(p.length===3&&p[2].length===4){ const a=parseInt(p[0]),b=parseInt(p[1]); if(a<=12&&b>12) return String(b).padStart(2,'0')+'/'+String(a).padStart(2,'0')+'/'+p[2]; return String(a).padStart(2,'0')+'/'+String(b).padStart(2,'0')+'/'+p[2]; }}
+        if(str.includes('-')){const p=str.split('-');if(p.length===3&&p[0].length===4) return p[2].padStart(2,'0')+'/'+p[1].padStart(2,'0')+'/'+p[0];}
         return str;
       }
       let imported=0;
       for(let i=0;i<rows.length;i++){
         const row=rows[i];
         const entry={
-          numero_remito:String(getVal(row,colMap.numero_remito)),
-          fecha:normalizeDate(excelDate(getVal(row,colMap.fecha))),
-          litros:parseFloat(String(getVal(row,colMap.litros)).replace(/[^\d.]/g,''))||0,
-          bodega_origen:String(getVal(row,colMap.bodega_origen)),
-          bodega_destino:String(getVal(row,colMap.bodega_destino)),
-          nombre_chofer:String(getVal(row,colMap.nombre_chofer)),
+          numero_remito:String(getVal(row,colMap.numero_remito)), fecha:normalizeDate(excelDate(getVal(row,colMap.fecha))),
+          litros:parseFloat(String(getVal(row,colMap.litros)).replace(/[^\d.]/g,''))||0, bodega_origen:String(getVal(row,colMap.bodega_origen)),
+          bodega_destino:String(getVal(row,colMap.bodega_destino)), nombre_chofer:String(getVal(row,colMap.nombre_chofer)),
           _id:Date.now()+i,_ts:new Date().toISOString()
         };
-        await saveFn(entry);
-        imported++;
+        await saveFn(entry); imported++;
       }
       showToast(`✓ ${imported} registros importados`);
     } catch(err){showToast('❌ Error al leer archivo',true);console.error(err);}
   };
   reader.readAsArrayBuffer(file);
 }
-
 async function importarDesdePDF(file, saveFn) {
   const reader = new FileReader();
   reader.onload = async (e) => {
@@ -1955,8 +1448,7 @@ async function importarDesdePDF(file, saveFn) {
       const pm=text.match(/\/Subject\s*\(REMITOS_DATA:([A-Za-z0-9+/=]+)\)/);
       if(pm) jsonData=decodeURIComponent(escape(atob(pm[1])));
       if(!jsonData){
-        const chunks={};let maxIdx=-1;
-        const re=/##RD(\d+)##([A-Za-z0-9+/=]{1,200})/g;let m;
+        const chunks={};let maxIdx=-1; const re=/##RD(\d+)##([A-Za-z0-9+/=]{1,200})/g;let m;
         while((m=re.exec(text))!==null){const idx=parseInt(m[1]);chunks[idx]=m[2];if(idx>maxIdx)maxIdx=idx;}
         if(maxIdx>=0){
           let b64='';Object.keys(chunks).map(Number).sort((a,b)=>a-b).forEach(k=>b64+=chunks[k]);
@@ -1966,8 +1458,7 @@ async function importarDesdePDF(file, saveFn) {
       if(!jsonData){showToast('❌ PDF no compatible (exportalo desde RemitOS)',true);return;}
       const data=JSON.parse(jsonData);
       for(let i=0;i<data.length;i++){
-        const entry={...data[i],litros:parseFloat(String(data[i].litros).replace(/[^\d.]/g,''))||0,
-          _id:Date.now()+i,_ts:new Date().toISOString()};
+        const entry={...data[i],litros:parseFloat(String(data[i].litros).replace(/[^\d.]/g,''))||0, _id:Date.now()+i,_ts:new Date().toISOString()};
         await saveFn(entry);
       }
       showToast('✓ '+data.length+' registros importados desde PDF');
@@ -1975,72 +1466,43 @@ async function importarDesdePDF(file, saveFn) {
   };
   reader.readAsArrayBuffer(file);
 }
-
-function importExcel(input) {
-  const file=input.files[0]; if(!file) return;
-  importarDesdeExcel(file, saveRegistroPersonal);
-  input.value='';
-}
-
-function importPDF(input) {
-  const file=input.files[0]; if(!file) return;
-  importarDesdePDF(file, saveRegistroPersonal);
-  input.value='';
-}
-
-function importExcelGroup(input) {
-  const file=input.files[0]; if(!file) return;
-  importarDesdeExcel(file, saveRegistroGroup);
-  input.value='';
-}
-
-function importPDFGroup(input) {
-  const file=input.files[0]; if(!file) return;
-  importarDesdePDF(file, saveRegistroGroup);
-  input.value='';
-}
-
+function importExcel(input) { const file=input.files[0]; if(!file) return; importarDesdeExcel(file, saveRegistroPersonal); input.value=''; }
+function importPDF(input) { const file=input.files[0]; if(!file) return; importarDesdePDF(file, saveRegistroPersonal); input.value=''; }
+function importExcelGroup(input) { const file=input.files[0]; if(!file) return; importarDesdeExcel(file, saveRegistroGroup); input.value=''; }
+function importPDFGroup(input) { const file=input.files[0]; if(!file) return; importarDesdePDF(file, saveRegistroGroup); input.value=''; }
 function extractPDFText(ab){
   const b=new Uint8Array(ab);let t='';
   for(let i=0;i<b.length;i++){if(b[i]>=32&&b[i]<127)t+=String.fromCharCode(b[i]);}
   return t;
 }
 
-// ══════════════════════════════════════════
 // HELPERS
-// ══════════════════════════════════════════
 function normalizeDate(str){
   if(!str) return '';
-  const s=String(str).trim();
-  const p=s.split('/');
+  const s=String(str).trim(); const p=s.split('/');
   if(p.length===3) return p[0].padStart(2,'0')+'/'+p[1].padStart(2,'0')+'/'+p[2];
   return s;
 }
-
 function fechaToISO(str){
   if(!str) return null;
   const p=String(str).split('/');
   if(p.length===3) return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
   return null;
 }
-
 function parseFecha(str){
   if(!str) return null;
   const p=String(str).split('/');
   if(p.length===3) return new Date(p[2],p[1]-1,p[0]);
   return new Date(str);
 }
-
 function updateHeader(){
   document.getElementById('headerCount').textContent = registros.length + ' registros' + (isGuest ? ' (demo)' : '');
 }
-
 function clearDateFilters(){
   document.getElementById('filterDesde').value='';
   document.getElementById('filterHasta').value='';
   renderRecords();
 }
-
 function showToast(msg, isError=false){
   const t=document.getElementById('toast');
   t.textContent=msg;
@@ -2049,20 +1511,11 @@ function showToast(msg, isError=false){
   setTimeout(()=>t.classList.remove('show'),2800);
 }
 
-// ══════════════════════════════════════════
 // MODAL HELPER
-// ══════════════════════════════════════════
 function createModal(title, bodyHtml, onConfirm, confirmLabel='Guardar') {
   const overlay=document.createElement('div');
   overlay.className='modal-overlay';
-  overlay.innerHTML=`<div class="modal">
-    <div class="modal-title">${title}</div>
-    ${bodyHtml}
-    <div class="modal-actions">
-      <button class="btn-modal-cancel">Cancelar</button>
-      <button class="btn-modal-ok">${confirmLabel}</button>
-    </div>
-  </div>`;
+  overlay.innerHTML=`<div class="modal"><div class="modal-title">${title}</div>${bodyHtml}<div class="modal-actions"><button class="btn-modal-cancel">Cancelar</button><button class="btn-modal-ok">${confirmLabel}</button></div></div>`;
   document.body.appendChild(overlay);
   overlay.querySelector('.btn-modal-cancel').onclick=()=>overlay.remove();
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
@@ -2073,9 +1526,7 @@ function createModal(title, bodyHtml, onConfirm, confirmLabel='Guardar') {
   return overlay;
 }
 
-// ══════════════════════════════════════════
 // INIT
-// ══════════════════════════════════════════
 initAuth();
 </script>
 </body>
